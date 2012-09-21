@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <getopt.h>
 
 #include <config.h>
@@ -24,6 +25,8 @@ struct globalArgs_t {
 #	endif /* NPT_ALLOW_VERBOSITY */
 
 	unsigned long long loops;	/* -l option */
+	int trace_ust;
+	int trace_kernel;
 	unsigned long cpuHz;
 } globalArgs;
 
@@ -36,6 +39,8 @@ void initopt() {
 #	endif /* NPT_ALLOW_VERBOSITY */
 
 	globalArgs.loops = NPT_DEFAULT_LOOP_NUMBER;
+	globalArgs.trace_ust = 0;
+	globalArgs.trace_kernel = 0;
 }
 
 #ifdef NPT_ALLOW_VERBOSITY
@@ -53,23 +58,24 @@ void verbose(int lvl, char* txt) {
  * duration of a cycle
  */
 #ifdef __i386
-extern __inline__ unsigned long long rdtsc() {
+static __inline__ unsigned long long rdtsc() {
 	unsigned long long x;
 	__asm__ volatile ("rdtsc" : "=A" (x));
 	return x;
 }
 #elif defined __amd64
-extern __inline__ unsigned long long rdtsc() {
+static __inline__ unsigned long long rdtsc() {
 	unsigned long long a, d;
 	__asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
 	return (d<<32) | a;
 }
 #endif
 
-/**
- * The array used to store the histogram
- */
+/** The array used to store the histogram */
 unsigned long long histogram[NPT_HISTOGRAM_SIZE];
+
+/** counter for bigger values than histogram size */
+unsigned long long histogramOverruns;
 
 /**
  * Treat line command options
@@ -84,15 +90,16 @@ int npt_getopt(int argc, char **argv) {
 			{"verbose",	no_argument,		0,	'v'},
 #			endif /* NPT_ALLOW_VERBOSITY */
 			{"loops",	required_argument,	0,	'l'},
+			{"trace",	required_argument,	0,	't'},
 			{0, 0, 0, 0}
 		};
 		/* getopt_long stores the option index here. */
 		int option_index = 0;
 
 #		ifdef NPT_ALLOW_VERBOSITY		
-		char* shortopt = {"l:v"};
+		char* shortopt = {"l:t:v"};
 #		else /* NPT_ALLOW_VERBOSITY */
-		char* shortopt = {"l:"};
+		char* shortopt = {"l:t:"};
 #		endif /* NPT_ALLOW_VERBOSITY */
 
 		c = getopt_long(argc, argv, shortopt,
@@ -115,6 +122,16 @@ int npt_getopt(int argc, char **argv) {
 			case 'l':
 				if (sscanf(optarg, "%llu", &globalArgs.loops) == 0) {
 					fprintf(stderr, "--loops: argument must be an unsigned long long\n");
+					return 1;
+				}
+				break;
+			
+			// Option --trace (-t)
+			case 't': 	
+				if (strcmp(optarg, "ust") == 0) globalArgs.trace_ust = 1;
+				else if (strcmp(optarg, "kernel") == 0) globalArgs.trace_kernel = 1;
+				else {
+					fprintf(stderr, "--trace: argument must be one of 'ust' or 'kernel'\n");
 					return 1;
 				}
 				break;
@@ -169,7 +186,7 @@ unsigned long get_cpu_speed() {
  * Function to calculate the time difference between two rdtsc
  */
 #define MAXULL ((unsigned long long)(~0ULL))
-double diff(unsigned long long start, unsigned long long end) {
+static __inline__ double diff(unsigned long long start, unsigned long long end) {
 	if (globalArgs.cpuHz == 0) return 0.0;
 	else if (end < start) return (double)(MAXULL-start+end+1ULL) / (double)globalArgs.cpuHz;
 	else return (double)(end-start)/(double)globalArgs.cpuHz;
@@ -186,20 +203,25 @@ int cycle() {
 	double maxDuration = 0.0;
 	double sumDuration = 0.0;
 	
+	// Time declaration for the first loop
 	t0 = rdtsc();
 	t1 = t0;
-	
-	#define NOCOUNTLOOP 5
-	
-	while (counter < globalArgs.loops+NOCOUNTLOOP) {
+
+	// We are cycling NPT_NOCOUNTLOOP more times to let the system
+	// enters in the cycle period we want to analyze
+	while (counter < globalArgs.loops+NPT_NOCOUNTLOOP) {
 		// Calculate diff between t0 and t1
 		duration = diff(t1, t0);
 		
 		// Update stat variables
-		if (counter > NOCOUNTLOOP-1) {
+		if (counter > NPT_NOCOUNTLOOP-1) {
 			if (duration < minDuration) minDuration = duration;
 			if (duration > maxDuration) maxDuration = duration;
 			sumDuration += duration;
+			
+			// Store data in the histogram if duration < max size
+			if (duration < NPT_HISTOGRAM_SIZE) histogram[(int)duration]++;
+			else histogramOverruns++;
 		}
 		
 		// Increment counter as we have done one more cycle
@@ -209,25 +231,53 @@ int cycle() {
 		t1 = t0;
 		t0 = rdtsc();
 	}
-	counter = counter-NOCOUNTLOOP;
-	
-	printf("min: %f us\n", minDuration);
-	printf("max: %f us\n", maxDuration);
-	printf("mean: %f us\n", sumDuration / (double)counter);
-	printf("sum: %f us\n", sumDuration);
+	// Readapt the counter to the number of counted cycles
+	counter = counter-NPT_NOCOUNTLOOP;
+
+	// Print the statistics
 	printf("%lld cycles done over %llu.\n", counter, globalArgs.loops);
+	printf("Cycles duration:\n");
+	printf("	min:	%f us\n", minDuration);
+	printf("	max:	%f us\n", maxDuration);
+	printf("	mean:	%f us\n", sumDuration / (double)counter);
+	printf("	sum:	%f us\n", sumDuration);
+	
+	return 0;
+}
+
+int print_histogram() {
+	int i;
+	
+	printf("--------------------------\n");
+	printf("duration (us)	no. cycles\n");
+	printf("--------------------------\n");
+	for (i = 0; i < NPT_HISTOGRAM_SIZE; i++) {
+		// Just print the lines for which we have data
+		if (histogram[i] > 0) {
+			printf("%d		%llu\n", i, histogram[i]);
+		}
+	}
+	printf("--------------------------\n");
+	printf("Overruns (%d+): %llu\n", NPT_HISTOGRAM_SIZE, histogramOverruns);
 	
 	return 0;
 }
 
 int main (int argc, char **argv) {
+	int i;
+
 	initopt();
 	if (npt_getopt(argc, argv) != 0) exit(1);
 	
 	globalArgs.cpuHz = get_cpu_speed();
 	if (globalArgs.cpuHz < 0) exit(1);
 	
+	for (i = 0; i < NPT_HISTOGRAM_SIZE; i++) histogram[i] = 0;
+	histogramOverruns = 0;
+	
 	cycle();
+	
+	print_histogram();
 		
 	return 0;
 }
