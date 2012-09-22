@@ -41,7 +41,9 @@ struct globalArgs_t {
 	bool trace_kernel;
 	bool picoseconds;
 	bool nanoseconds;
+	
 	unsigned long cpuHz;
+	double cpuPeriod;
 } globalArgs;
 
 /**
@@ -220,8 +222,8 @@ unsigned long get_cpu_speed() {
 #define MAXULL ((unsigned long long)(~0ULL))
 static __inline__ double diff(unsigned long long start, unsigned long long end) {
 	if (globalArgs.cpuHz == 0) return 0.0;
-	else if (end < start) return (double)(MAXULL-start+end+1ULL) / (double)globalArgs.cpuHz;
-	else return (double)(end-start) / (double)globalArgs.cpuHz;
+	else if (end < start) return (double)(MAXULL-start+end+1ULL) * (double)globalArgs.cpuPeriod;
+	else return (double)(end-start) * (double)globalArgs.cpuPeriod;
 }
 
 /**
@@ -303,7 +305,8 @@ int main (int argc, char **argv) {
 	if (npt_getopt(argc, argv) != 0) exit(1);
 	
 	globalArgs.cpuHz = get_cpu_speed();
-	if (globalArgs.cpuHz < 0) exit(1);
+	if (globalArgs.cpuHz <= 0) exit(1);
+	globalArgs.cpuPeriod = 1.0 / (double)globalArgs.cpuHz;
 	
 	for (i = 0; i < NPT_HISTOGRAM_SIZE; i++) histogram[i] = 0;
 	histogramOverruns = 0;
