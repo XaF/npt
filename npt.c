@@ -10,6 +10,8 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
@@ -36,7 +38,7 @@ struct globalArgs_t {
     int verbosity;		/* -v option */
 #	endif /* NPT_ALLOW_VERBOSITY */
 
-	unsigned long long loops;	/* -l option */
+	uint64_t loops;	/* -l option */
 	bool trace_ust;
 	bool trace_kernel;
 	bool picoseconds;
@@ -76,24 +78,24 @@ void verbose(int lvl, char* txt) {
  * duration of a cycle
  */
 #ifdef __i386
-static __inline__ unsigned long long rdtsc() {
-	unsigned long long x;
+static __inline__ uint64_t rdtsc() {
+	uint64_t x;
 	__asm__ volatile ("rdtsc" : "=A" (x));
 	return x;
 }
 #elif defined __amd64
-static __inline__ unsigned long long rdtsc() {
-	unsigned long long a, d;
+static __inline__ uint64_t rdtsc() {
+	uint64_t a, d;
 	__asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
 	return (d<<32) | a;
 }
 #endif
 
 /** The array used to store the histogram */
-unsigned long long histogram[NPT_HISTOGRAM_SIZE];
+uint64_t histogram[NPT_HISTOGRAM_SIZE];
 
 /** counter for bigger values than histogram size */
-unsigned long long histogramOverruns;
+uint64_t histogramOverruns;
 
 /**
  * Treat line command options
@@ -144,8 +146,8 @@ int npt_getopt(int argc, char **argv) {
 			
 			// Option --loops (-l)
 			case 'l':
-				if (sscanf(optarg, "%llu", &globalArgs.loops) == 0) {
-					fprintf(stderr, "--loops: argument must be an unsigned long long\n");
+				if (sscanf(optarg, "%" PRIu64 "", &globalArgs.loops) == 0) {
+					fprintf(stderr, "--loops: argument must be a 64bits unsigned int\n");
 					return 1;
 				}
 				break;
@@ -219,11 +221,10 @@ unsigned long get_cpu_speed() {
 /**
  * Function to calculate the time difference between two rdtsc
  */
-#define MAXULL ((unsigned long long)(~0ULL))
-static __inline__ double diff(unsigned long long start, unsigned long long end) {
+static __inline__ double diff(uint64_t start, uint64_t end) {
 	if (globalArgs.cpuHz == 0) return 0.0;
-	else if (end < start) return (double)(MAXULL-start+end+1ULL) * (double)globalArgs.cpuPeriod;
-	else return (double)(end-start) * (double)globalArgs.cpuPeriod;
+	else if (end < start) return (double)(UINT64_MAX-start+end+1) * globalArgs.cpuPeriod;
+	else return (double)(end-start) * globalArgs.cpuPeriod;
 }
 
 /**
@@ -232,8 +233,8 @@ static __inline__ double diff(unsigned long long start, unsigned long long end) 
 #define UNITE(pico, nano) ((pico)?"ps":((nano)?"ns":"us"))
 int cycle() {
 	double duration = 0;
-	volatile unsigned long long counter = 0;
-	unsigned long long t0, t1;
+	volatile uint64_t counter = 0;
+	uint64_t t0, t1;
 	double minDuration = 99999.0;
 	double maxDuration = 0.0;
 	double sumDuration = 0.0;
@@ -270,7 +271,7 @@ int cycle() {
 	counter = counter-NPT_NOCOUNTLOOP;
 
 	// Print the statistics
-	printf("%lld cycles done over %llu.\n", counter, globalArgs.loops);
+	printf("%" PRIu64 " cycles done over %" PRIu64 ".\n", counter, globalArgs.loops);
 	printf("Cycles duration:\n");
 	printf("	min:	%f %s\n", minDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	printf("	max:	%f %s\n", maxDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
@@ -289,11 +290,11 @@ int print_histogram() {
 	for (i = 0; i < NPT_HISTOGRAM_SIZE; i++) {
 		// Just print the lines for which we have data
 		if (histogram[i] > 0) {
-			printf("%d		%llu\n", i, histogram[i]);
+			printf("%d		%" PRIu64 "\n", i, histogram[i]);
 		}
 	}
 	printf("--------------------------\n");
-	printf("Overruns (%d+): %llu\n", NPT_HISTOGRAM_SIZE, histogramOverruns);
+	printf("Overruns (%d+): %" PRIu64 "\n", NPT_HISTOGRAM_SIZE, histogramOverruns);
 	
 	return 0;
 }
