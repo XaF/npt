@@ -16,6 +16,18 @@
 
 #include <config.h>
 
+#ifndef true
+#define true 1
+#endif
+
+#ifndef false
+#define false 0
+#endif
+
+#ifndef bool
+#define bool int
+#endif
+
 /**
  * Create a structure to store the variables
  */
@@ -25,8 +37,10 @@ struct globalArgs_t {
 #	endif /* NPT_ALLOW_VERBOSITY */
 
 	unsigned long long loops;	/* -l option */
-	int trace_ust;
-	int trace_kernel;
+	bool trace_ust;
+	bool trace_kernel;
+	bool picoseconds;
+	bool nanoseconds;
 	unsigned long cpuHz;
 } globalArgs;
 
@@ -39,8 +53,10 @@ void initopt() {
 #	endif /* NPT_ALLOW_VERBOSITY */
 
 	globalArgs.loops = NPT_DEFAULT_LOOP_NUMBER;
-	globalArgs.trace_ust = 0;
-	globalArgs.trace_kernel = 0;
+	globalArgs.trace_ust = false;
+	globalArgs.trace_kernel = false;
+	globalArgs.picoseconds = false;
+	globalArgs.nanoseconds = false;
 }
 
 #ifdef NPT_ALLOW_VERBOSITY
@@ -86,11 +102,17 @@ int npt_getopt(int argc, char **argv) {
      
 	while (1) {
 		static struct option long_options[] = {
+			// Regular options
+			{"loops",		required_argument,	0,	'l'},
+			{"output",		required_argument,	0,	'o'},
+			{"trace",		required_argument,	0,	't'},
 #			ifdef NPT_ALLOW_VERBOSITY
-			{"verbose",	no_argument,		0,	'v'},
+			{"verbose",		no_argument,		0,	'v'},
 #			endif /* NPT_ALLOW_VERBOSITY */
-			{"loops",	required_argument,	0,	'l'},
-			{"trace",	required_argument,	0,	't'},
+
+			// Flags options
+			{"picoseconds",	no_argument, &globalArgs.picoseconds, true},
+			{"nanoseconds",	no_argument, &globalArgs.nanoseconds, true},
 			{0, 0, 0, 0}
 		};
 		/* getopt_long stores the option index here. */
@@ -126,10 +148,15 @@ int npt_getopt(int argc, char **argv) {
 				}
 				break;
 			
+			// Option --output (-o)
+			case 'o':
+				
+				break;
+			
 			// Option --trace (-t)
-			case 't': 	
-				if (strcmp(optarg, "ust") == 0) globalArgs.trace_ust = 1;
-				else if (strcmp(optarg, "kernel") == 0) globalArgs.trace_kernel = 1;
+			case 't':
+				if (strcmp(optarg, "ust") == 0) globalArgs.trace_ust = true;
+				else if (strcmp(optarg, "kernel") == 0) globalArgs.trace_kernel = true;
 				else {
 					fprintf(stderr, "--trace: argument must be one of 'ust' or 'kernel'\n");
 					return 1;
@@ -176,7 +203,12 @@ unsigned long get_cpu_speed() {
 	}
 	
 	if (fgets(buf, sizeof(buf), pp)) {
-		return (unsigned long)(atof(buf) * 1000000.0);
+		float multi;
+		if (globalArgs.picoseconds) multi = 1.0;
+		else if (globalArgs.nanoseconds) multi = 1000.0;
+		else multi = 1000000.0;
+		
+		return (unsigned long)(atof(buf) * multi);
 	}
 	
 	return 0;
@@ -189,12 +221,13 @@ unsigned long get_cpu_speed() {
 static __inline__ double diff(unsigned long long start, unsigned long long end) {
 	if (globalArgs.cpuHz == 0) return 0.0;
 	else if (end < start) return (double)(MAXULL-start+end+1ULL) / (double)globalArgs.cpuHz;
-	else return (double)(end-start)/(double)globalArgs.cpuHz;
+	else return (double)(end-start) / (double)globalArgs.cpuHz;
 }
 
 /**
  * The loop
  */
+#define UNITE(pico, nano) ((pico)?"ps":((nano)?"ns":"us"))
 int cycle() {
 	double duration = 0;
 	volatile unsigned long long counter = 0;
@@ -237,10 +270,10 @@ int cycle() {
 	// Print the statistics
 	printf("%lld cycles done over %llu.\n", counter, globalArgs.loops);
 	printf("Cycles duration:\n");
-	printf("	min:	%f us\n", minDuration);
-	printf("	max:	%f us\n", maxDuration);
-	printf("	mean:	%f us\n", sumDuration / (double)counter);
-	printf("	sum:	%f us\n", sumDuration);
+	printf("	min:	%f %s\n", minDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
+	printf("	max:	%f %s\n", maxDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
+	printf("	mean:	%f %s\n", sumDuration / (double)counter, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
+	printf("	sum:	%f %s\n", sumDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	
 	return 0;
 }
@@ -249,7 +282,7 @@ int print_histogram() {
 	int i;
 	
 	printf("--------------------------\n");
-	printf("duration (us)	no. cycles\n");
+	printf("duration (%s)	no. cycles\n", UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	printf("--------------------------\n");
 	for (i = 0; i < NPT_HISTOGRAM_SIZE; i++) {
 		// Just print the lines for which we have data
