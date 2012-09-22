@@ -20,6 +20,11 @@
 #define NPT_NOCOUNTLOOP 5
 
 /**
+ * Define if you want to enable tracing
+ */
+#define NPT_TRACE 1
+
+/**
  * Define if you want to enable the LTTNG userspace tracer 
  */
 #define NPT_LTTNG_UST 1

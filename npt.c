@@ -11,23 +11,21 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <getopt.h>
 
 #include <config.h>
 
-#ifndef true
-#define true 1
-#endif
-
-#ifndef false
-#define false 0
-#endif
-
-#ifndef bool
-#define bool int
+#ifdef NPT_TRACE
+#	ifdef NPT_LTTNG_UST
+#		define TRACEPOINT_DEFINE
+#		include "ust_npt.h"
+#	endif /* NPT_LTTNG_UST */
+//#	define TRACE_SESSION_NAME "npt"
+//#	include <lttng/lttng.h>
 #endif
 
 /**
@@ -35,7 +33,7 @@
  */
 struct globalArgs_t {
 #	ifdef NPT_ALLOW_VERBOSITY
-    int verbosity;		/* -v option */
+	int verbosity;		/* -v option */
 #	endif /* NPT_ALLOW_VERBOSITY */
 
 	uint64_t loops;	/* -l option */
@@ -101,9 +99,9 @@ uint64_t histogramOverruns;
  * Treat line command options
  */
 int npt_getopt(int argc, char **argv) {
-	
+
 	int c;
-     
+
 	while (1) {
 		static struct option long_options[] = {
 			// Regular options
