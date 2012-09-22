@@ -268,7 +268,7 @@ int cycle() {
 		duration = diff(t1, t0);
 
 #		ifdef NPT_LTTNG_UST
-		tracepoint(ust_npt, nptloop, counter, duration);
+		tracepoint(ust_npt, nptloop, counter, t0-t1, duration);
 #		endif /* NPT_LTTNG_UST */
 
 		
@@ -320,6 +320,7 @@ int print_histogram() {
 	int i;
 	FILE *hfd = NULL;
 	
+	// If we want to save the histogram in a file
 	if (globalArgs.output != NULL) {
 		hfd = fopen(globalArgs.output, "w");
 		if (hfd == NULL) {
@@ -355,20 +356,26 @@ int print_histogram() {
 int main (int argc, char **argv) {
 	int i;
 
+	// Init options and load command line arguments
 	initopt();
 	if (npt_getopt(argc, argv) != 0) exit(1);
 	
+	// Load CPU frequency and calculate period
 	globalArgs.cpuHz = get_cpu_speed();
 	if (globalArgs.cpuHz <= 0) exit(1);
 	globalArgs.cpuPeriod = 1.0 / (double)globalArgs.cpuHz;
 	
+	// Prepare histogram
 	for (i = 0; i < NPT_HISTOGRAM_SIZE; i++) histogram[i] = 0;
 	histogramOverruns = 0;
 	
+	// Start cycling
 	cycle();
 	
+	// Generate and print the histogram
 	print_histogram();
 	
+	// Free variables
 	free(globalArgs.output);
 		
 	return 0;

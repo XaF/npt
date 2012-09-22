@@ -14,10 +14,12 @@ extern "C" {
 TRACEPOINT_EVENT(ust_npt, nptloop,
 	TP_ARGS(
 		int, countloop,
+		long, ticks,
 		double, duration
 	),
 	TP_FIELDS(
 		ctf_integer(int, countloop, countloop)
+		ctf_integer(long, ticks, ticks)
 		ctf_float(double, duration, duration)
 	)
 )
