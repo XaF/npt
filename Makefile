@@ -8,7 +8,7 @@ TARGET=npt
 SRC=npt.c tracepoint_ust.c
 
 all:
-	gcc -o ${TARGET} ${OPT} ${LIB} ${SRC}
+	gcc -o ${TARGET} ${OPT} ${SRC} ${LIB}
 
 clean:
 	rm ${TARGET}
