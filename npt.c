@@ -39,8 +39,8 @@ struct globalArgs_t {
 	uint64_t loops;	/* -l option */
 	bool trace_ust;
 	bool trace_kernel;
-	bool picoseconds;
-	bool nanoseconds;
+	int picoseconds; /* flag */
+	int nanoseconds; /* flag */
 	
 	unsigned long cpuHz;
 	double cpuPeriod;
