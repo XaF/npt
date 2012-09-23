@@ -17,6 +17,8 @@
 #include <inttypes.h>
 #include <getopt.h>
 #include <math.h>
+#include <sched.h>
+#include <time.h>
 
 #include <config.h>
 
@@ -49,6 +51,8 @@ struct globalArgs_t {
 	bool trace_kernel;	/* -t option */
 	int picoseconds;	/* flag */
 	int nanoseconds;	/* flag */
+	
+	int priority;		/* not an option yet */
 	
 	unsigned long cpuHz;
 	double cpuPeriod;
@@ -203,29 +207,40 @@ int npt_getopt(int argc, char **argv) {
 	return 0;
 }
 
+struct timespec *_timespec_diff(struct timespec *ts1, struct timespec *ts2) {
+	static struct timespec ts;
+	ts.tv_sec = ts1->tv_sec - ts2->tv_sec;
+	ts.tv_nsec = ts1->tv_nsec - ts2->tv_nsec;
+	if (ts.tv_nsec < 0) {
+		ts.tv_sec--;
+		ts.tv_nsec += 1e9;
+	}
+	return &ts;
+}
+
 /**
- * Gets the cpu speed from /proc/cpuinfo
+ * Gets the cpu speed by testing the system
  */
 unsigned long get_cpu_speed() {
-	FILE *pp;
-	char buf[30];
+	struct timespec ts0, ts1;
+	uint64_t t0 = 0, t1 = 0;
 	
-	if ((pp = popen("grep \"cpu MHz\" /proc/cpuinfo | head -n1 \
-			| cut -d':' -f2 | tr -d ' \n\r'", "r")) == NULL) {
-		perror("unable to find CPU speed");
-		return -1;
-	}
+	// Time before CPU stress
+	clock_gettime(CLOCK_MONOTONIC_RAW, &ts0);
+	t0 = rdtsc();
 	
-	if (fgets(buf, sizeof(buf), pp)) {
-		float multi;
-		if (globalArgs.picoseconds) multi = 1.0;
-		else if (globalArgs.nanoseconds) multi = 1000.0;
-		else multi = 1000000.0;
-		
-		return (unsigned long)(atof(buf) * multi);
-	}
+	// We have to stress the CPU to be sure it's not in frequency scaling
+	volatile uint64_t i;
+	for (i = 0; i < 10000000; i++);
 	
-	return 0;
+	// Time after CPU stress
+	t1 = rdtsc();
+	clock_gettime(CLOCK_MONOTONIC_RAW, &ts1);
+	
+	// We compare clock_gettime and rdtsc values
+	struct timespec *ts = _timespec_diff(&ts1, &ts0);
+	uint64_t ts_nsec = ts->tv_sec * 1000000000LL + ts->tv_nsec;
+	return (unsigned long)((double)(t1 - t0) / (double)ts_nsec * 1.0e9);
 }
 
 /**
@@ -266,7 +281,7 @@ int cycle() {
 	while (counter < globalArgs.loops+NPT_NOCOUNTLOOP) {
 		// Calculate diff between t0 and t1
 		duration = diff(t1, t0);
-
+		
 #		ifdef NPT_LTTNG_UST
 		tracepoint(ust_npt, nptloop, counter, t0-t1, duration);
 #		endif /* NPT_LTTNG_UST */
@@ -308,7 +323,7 @@ int cycle() {
 	printf("Cycles duration:\n");
 	printf("	min:		%f %s\n", minDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	printf("	max:		%f %s\n", maxDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
-	printf("	mean:		%f %s\n", sumDuration / (double)counter, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
+	printf("	mean:		%f %s\n", meanDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	printf("	sum:		%f %s\n", sumDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	printf("	variance:	%f %s\n", variance_n, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	printf("	std dev:	%f %s\n", stdDeviation, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
@@ -353,24 +368,51 @@ int print_histogram() {
 	return 0;
 }
 
+int setrtpriority(int priority, int policy) {
+	struct sched_param schedp;
+	
+	memset(&schedp, 0, sizeof(schedp));
+	schedp.sched_priority = priority;
+	sched_setscheduler(0, policy, &schedp);
+	
+	return 0;
+}
+
 int main (int argc, char **argv) {
 	int i;
+	cpu_set_t cpuMask;
 
 	// Init options and load command line arguments
 	initopt();
 	if (npt_getopt(argc, argv) != 0) exit(1);
 	
-	// Load CPU frequency and calculate period
-	globalArgs.cpuHz = get_cpu_speed();
-	if (globalArgs.cpuHz <= 0) exit(1);
-	globalArgs.cpuPeriod = 1.0 / (double)globalArgs.cpuHz;
-	
 	// Prepare histogram
 	for (i = 0; i < NPT_HISTOGRAM_SIZE; i++) histogram[i] = 0;
 	histogramOverruns = 0;
 	
+	// Enter in RT mode
+	CPU_ZERO(&cpuMask);
+	CPU_SET(1, &cpuMask);
+	sched_setaffinity(0, sizeof(cpuMask), &cpuMask);
+	setrtpriority(99, SCHED_FIFO);
+	
+	// Calibrate CPU frequency and calculate period
+	globalArgs.cpuHz = get_cpu_speed();
+	if (globalArgs.cpuHz <= 0) exit(1);
+
+	double multi;
+	if (globalArgs.picoseconds) multi = 1.0e12;
+	else if (globalArgs.nanoseconds) multi = 1.0e9;
+	else multi = 1.0e6;
+	globalArgs.cpuPeriod = multi / (double)globalArgs.cpuHz;
+	
+	printf("cpuHz: %" PRIu64 " cpuPeriod: %.20f\n", globalArgs.cpuHz, globalArgs.cpuPeriod);
+	
 	// Start cycling
 	cycle();
+	
+	// Exit RT mode
+	setrtpriority(0, SCHED_OTHER);
 	
 	// Generate and print the histogram
 	print_histogram();
