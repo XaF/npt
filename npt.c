@@ -19,6 +19,8 @@
 #include <math.h>
 #include <sched.h>
 #include <time.h>
+#include <errno.h>
+#include <sys/io.h>
 
 #include <config.h>
 
@@ -414,20 +416,84 @@ int print_histogram() {
 	return 0;
 }
 
+/**
+ * Update scheduler to the given priority and policy
+ */
 int setrtpriority(int priority, int policy) {
 	struct sched_param schedp;
 
 	memset(&schedp, 0, sizeof(schedp));
 	schedp.sched_priority = priority;
-	sched_setscheduler(0, policy, &schedp);
+	if (sched_setscheduler(0, policy, &schedp) != EXIT_SUCCESS) {
+		fprintf(stderr, "Error: unable to set scheduler, %s (%d)\n", strerror(errno), errno);
+		return EXIT_FAILURE;
+	}
 
-	return 0;
+	return EXIT_SUCCESS;
+}
+
+/**
+ * Enable local IRQs
+ */
+static __inline__ void sti() {
+	iopl(3); // High I/O privileges
+	__asm__ __volatile__ ("sti":::"memory");
+	iopl(0); // Normal I/O privileges
+}
+
+/**
+ * Disable local IRQs
+ */
+static __inline__ void cli() {
+	iopl(3); // High I/O privileges
+	__asm__ __volatile__ ("cli":::"memory");
+	iopl(0); // Normal I/O privileges
+}
+
+/**
+ * Set the different parameters to favor RT
+ */
+int setrtmode(bool rt) {
+	if (rt) {
+		// Set CPU affinity
+		cpu_set_t cpuMask;
+		CPU_ZERO(&cpuMask);
+		CPU_SET(1, &cpuMask);
+		if (sched_setaffinity(globalArgs.affinity, sizeof(cpuMask), &cpuMask) == EXIT_SUCCESS)
+			printf("# CPU affinity set on CPU %d\n", globalArgs.affinity);
+		else {
+			fprintf(stderr, "Error: unable to set CPU affinity, %s (%d)\n", strerror(errno), errno);
+			return EXIT_FAILURE;
+		}
+
+		// Set RT scheduler
+		if (setrtpriority(globalArgs.priority, SCHED_FIFO) == EXIT_SUCCESS)
+			printf("# Application priority set to %d\n", globalArgs.priority);
+		else return EXIT_FAILURE;
+
+		// Disable local IRQs
+		cli();
+	} else {
+		// Reset scheduler to default
+		if (setrtpriority(0, SCHED_OTHER) != EXIT_SUCCESS)
+			return EXIT_FAILURE;
+
+		// Enable local IRQs
+		sti();
+	}
+	
+	return EXIT_SUCCESS;
 }
 
 int main (int argc, char **argv) {
-	int i;
-	cpu_set_t cpuMask;
+	int i, ret = 0;
 
+	// Running as root ?
+	if (getuid() != 0) {
+			printf("Root access is needed. -- Aborting!\n");
+			return EXIT_SUCCESS;
+	}
+	
 	// Init options and load command line arguments
 	initopt();
 	if (npt_getopt(argc, argv) != 0) exit(1);
@@ -437,14 +503,10 @@ int main (int argc, char **argv) {
 	histogramOverruns = 0;
 
 	// Enter in RT mode
-	CPU_ZERO(&cpuMask);
-	CPU_SET(1, &cpuMask);
-	sched_setaffinity(globalArgs.affinity, sizeof(cpuMask), &cpuMask);
-	printf("# CPU affinity set on CPU %d\n", globalArgs.affinity);
-	setrtpriority(globalArgs.priority, SCHED_FIFO);
-	printf("# Application priority set to %d\n", globalArgs.priority);
+	if (setrtmode(true) != EXIT_SUCCESS)
+		goto err;
 
-	// Calibrate CPU frequency and calculate period
+	// Get CPU frequency and calculate period
 	globalArgs.cpuHz = get_cpu_speed();
 	if (globalArgs.cpuHz <= 0) exit(1);
 
@@ -462,13 +524,18 @@ int main (int argc, char **argv) {
 	cycle();
 
 	// Exit RT mode
-	setrtpriority(0, SCHED_OTHER);
+	setrtmode(false);
 
 	// Generate and print the histogram
 	print_histogram();
 
+end:
 	// Free variables
 	free(globalArgs.output);
+	return ret;
 
-	return 0;
+err:
+	ret = 1;
+	goto end;
+
 }
