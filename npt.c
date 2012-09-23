@@ -53,6 +53,7 @@ struct globalArgs_t {
 	int nanoseconds;	/* flag */
 	
 	int priority;		/* not an option yet */
+	int affinity;		/* not an option yet */
 	
 	unsigned long cpuHz;
 	double cpuPeriod;
@@ -72,6 +73,8 @@ void initopt() {
 	globalArgs.trace_kernel = false;
 	globalArgs.picoseconds = false;
 	globalArgs.nanoseconds = false;
+	globalArgs.priority = 99;
+	globalArgs.affinity = 1;
 }
 
 #ifdef NPT_ALLOW_VERBOSITY
@@ -231,7 +234,7 @@ unsigned long get_cpu_speed() {
 	
 	// We have to stress the CPU to be sure it's not in frequency scaling
 	volatile uint64_t i;
-	for (i = 0; i < 10000000; i++);
+	for (i = 0; i < 100000000; i++);
 	
 	// Time after CPU stress
 	t1 = rdtsc();
@@ -299,7 +302,7 @@ int cycle() {
 			
 			// For variance and standard deviation
 			deltaDuration = duration - meanDuration;
-			meanDuration = meanDuration + deltaDuration / (counter-NPT_NOCOUNTLOOP);
+			meanDuration = meanDuration + deltaDuration / (double)(counter-NPT_NOCOUNTLOOP);
 			meanSquared = meanSquared + deltaDuration * (duration - meanDuration);
 			
 			// Store data in the histogram if duration < max size
@@ -315,18 +318,18 @@ int cycle() {
 	counter = counter-NPT_NOCOUNTLOOP;
 	
 	// Calcul of variance dans standard deviation
-	variance_n = meanSquared / counter;
+	variance_n = meanSquared / (double)counter;
 	stdDeviation = sqrt(variance_n);
 
 	// Print the statistics
 	printf("%" PRIu64 " cycles done over %" PRIu64 ".\n", counter, globalArgs.loops);
 	printf("Cycles duration:\n");
-	printf("	min:		%f %s\n", minDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
-	printf("	max:		%f %s\n", maxDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
-	printf("	mean:		%f %s\n", meanDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
-	printf("	sum:		%f %s\n", sumDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
-	printf("	variance:	%f %s\n", variance_n, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
-	printf("	std dev:	%f %s\n", stdDeviation, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
+	printf("	min:		%.6f %s\n", minDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
+	printf("	max:		%.6f %s\n", maxDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
+	printf("	mean:		%.6f %s\n", meanDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
+	printf("	sum:		%.6f %s\n", sumDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
+	printf("	variance:	%g %s\n", variance_n, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
+	printf("	std dev:	%.6f %s\n", stdDeviation, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	
 	return 0;
 }
@@ -393,8 +396,10 @@ int main (int argc, char **argv) {
 	// Enter in RT mode
 	CPU_ZERO(&cpuMask);
 	CPU_SET(1, &cpuMask);
-	sched_setaffinity(0, sizeof(cpuMask), &cpuMask);
-	setrtpriority(99, SCHED_FIFO);
+	sched_setaffinity(globalArgs.affinity, sizeof(cpuMask), &cpuMask);
+	printf("# CPU affinity set on CPU %d\n", globalArgs.affinity);
+	setrtpriority(globalArgs.priority, SCHED_FIFO);
+	printf("# Application priority set to %d\n", globalArgs.priority);
 	
 	// Calibrate CPU frequency and calculate period
 	globalArgs.cpuHz = get_cpu_speed();
@@ -406,7 +411,7 @@ int main (int argc, char **argv) {
 	else multi = 1.0e6;
 	globalArgs.cpuPeriod = multi / (double)globalArgs.cpuHz;
 	
-	printf("cpuHz: %" PRIu64 " cpuPeriod: %.20f\n", globalArgs.cpuHz, globalArgs.cpuPeriod);
+	printf("# CPU frequency (evaluation): %.02f MHz\n", globalArgs.cpuHz / 1e6);
 	
 	// Start cycling
 	cycle();
