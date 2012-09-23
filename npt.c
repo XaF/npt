@@ -1,4 +1,4 @@
-/*
+/**
  * Non-Preempt Test software
  *
  * (C) 2012 Raphaël Beamonte <raphael.beamonte@gmail.com>
@@ -10,17 +10,19 @@
 
 #include <ctype.h>
 #include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <stdint.h>		// int64_t, INT64_MAX
+#include <stdbool.h>	// bool, true, false
 #include <stdlib.h>
-#include <string.h>
-#include <inttypes.h>
-#include <getopt.h>
-#include <math.h>
-#include <sched.h>
-#include <time.h>
-#include <errno.h>
-#include <sys/io.h>
+#include <limits.h>		// INT_MAX
+#include <string.h>		// strerror, strcmp
+#include <inttypes.h>	// PRIu64
+#include <getopt.h>		// getopt_long
+#include <math.h>		// sqrt
+#include <sched.h>		// sched_*
+#include <time.h>		// struct timespec, clock_gettime
+#include <errno.h>		// errno
+#include <sys/io.h>		// iopl
+#include <unistd.h>		// getuid
 
 #include <config.h>
 
@@ -43,7 +45,7 @@
  * Create a structure to store the variables
  */
 struct globalArgs_t {
-#	ifdef NPT_ALLOW_VERBOSITY
+#	if NPT_ALLOW_VERBOSITY == 1
 	int verbosity;		/* -v option */
 #	endif /* NPT_ALLOW_VERBOSITY */
 
@@ -66,7 +68,7 @@ struct globalArgs_t {
  * Initialize options
  */
 void initopt() {
-#	ifdef NPT_ALLOW_VERBOSITY
+#	if NPT_ALLOW_VERBOSITY == 1
 	globalArgs.verbosity = 0;
 #	endif /* NPT_ALLOW_VERBOSITY */
 
@@ -81,15 +83,18 @@ void initopt() {
 	globalArgs.evaluateSpeed = 0;
 }
 
-#ifdef NPT_ALLOW_VERBOSITY
 /**
  * The function used to show verbose messages
  */
-void verbose(int lvl, char* txt) {
+#if NPT_ALLOW_VERBOSITY == 1
+static __inline__ void verbose(int lvl, char* txt) {
 	if (lvl <= globalArgs.verbosity)
 		printf("DEBUG%d: %s\n", lvl, txt);
 }
-#endif /* NPT_ALLOW_VERBOSITY */
+#define VERBOSE(lvl, txt) (verbose(lvl, txt))
+#else	/* NPT_ALLOW_VERBOSITY */
+#define VERBOSE(lvl, txt) ((void)0)
+#endif	/* NPT_ALLOW_VERBOSITY */
 
 /**
  * Function rdtsc (ReaD Time Stamp Counter) used to calculate the
@@ -128,7 +133,7 @@ int npt_getopt(int argc, char **argv) {
 			{"loops",		required_argument,	0,	'l'},
 			{"output",		required_argument,	0,	'o'},
 			{"trace",		required_argument,	0,	't'},
-#			ifdef NPT_ALLOW_VERBOSITY
+#			if NPT_ALLOW_VERBOSITY == 1
 			{"verbose",		no_argument,		0,	'v'},
 #			endif /* NPT_ALLOW_VERBOSITY */
 
@@ -141,7 +146,7 @@ int npt_getopt(int argc, char **argv) {
 		/* getopt_long stores the option index here. */
 		int option_index = 0;
 
-#		ifdef NPT_ALLOW_VERBOSITY
+#		if NPT_ALLOW_VERBOSITY == 1
 		char* shortopt = {"l:o:t:v"};
 #		else /* NPT_ALLOW_VERBOSITY */
 		char* shortopt = {"l:o:t:"};
@@ -189,10 +194,12 @@ int npt_getopt(int argc, char **argv) {
 				}
 				break;
 
+#			if NPT_ALLOW_VERBOSITY == 1
 			// Option --verbose (-v)
 			case 'v':
-				globalArgs.verbosity++;
+				if (globalArgs.verbosity < INT_MAX) globalArgs.verbosity++;
 				break;
+#			endif /* NPT_ALLOW_VERBOSITY */
 
 			case '?':
 				/* getopt_long already printed an error message. */
@@ -490,8 +497,8 @@ int main (int argc, char **argv) {
 
 	// Running as root ?
 	if (getuid() != 0) {
-			printf("Root access is needed. -- Aborting!\n");
-			return EXIT_SUCCESS;
+			fprintf(stderr, "Root access is needed. -- Aborting!\n");
+			return EXIT_FAILURE;
 	}
 	
 	// Init options and load command line arguments
