@@ -17,6 +17,7 @@
 #include <inttypes.h>
 #include <getopt.h>
 #include <math.h>
+#include <sched.h>
 
 #include <config.h>
 
@@ -49,6 +50,8 @@ struct globalArgs_t {
 	bool trace_kernel;	/* -t option */
 	int picoseconds;	/* flag */
 	int nanoseconds;	/* flag */
+	
+	int priority;		/* not an option yet */
 	
 	unsigned long cpuHz;
 	double cpuPeriod;
@@ -217,12 +220,7 @@ unsigned long get_cpu_speed() {
 	}
 	
 	if (fgets(buf, sizeof(buf), pp)) {
-		float multi;
-		if (globalArgs.picoseconds) multi = 1.0;
-		else if (globalArgs.nanoseconds) multi = 1000.0;
-		else multi = 1000000.0;
-		
-		return (unsigned long)(atof(buf) * multi);
+		return (unsigned long)(atof(buf) * 1.0e6);
 	}
 	
 	return 0;
@@ -308,7 +306,7 @@ int cycle() {
 	printf("Cycles duration:\n");
 	printf("	min:		%f %s\n", minDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	printf("	max:		%f %s\n", maxDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
-	printf("	mean:		%f %s\n", sumDuration / (double)counter, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
+	printf("	mean:		%f %s\n", meanDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	printf("	sum:		%f %s\n", sumDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	printf("	variance:	%f %s\n", variance_n, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	printf("	std dev:	%f %s\n", stdDeviation, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
@@ -353,8 +351,19 @@ int print_histogram() {
 	return 0;
 }
 
+int setrtpriority(int priority, int policy) {
+	struct sched_param schedp;
+	
+	memset(&schedp, 0, sizeof(schedp));
+	schedp.sched_priority = priority;
+	sched_setscheduler(0, policy, &schedp);
+	
+	return 0;
+}
+
 int main (int argc, char **argv) {
 	int i;
+	cpu_set_t cpuMask;
 
 	// Init options and load command line arguments
 	initopt();
@@ -363,14 +372,24 @@ int main (int argc, char **argv) {
 	// Load CPU frequency and calculate period
 	globalArgs.cpuHz = get_cpu_speed();
 	if (globalArgs.cpuHz <= 0) exit(1);
-	globalArgs.cpuPeriod = 1.0 / (double)globalArgs.cpuHz;
+
+	double multi;
+	if (globalArgs.picoseconds) multi = 1.0e-12;
+	else if (globalArgs.nanoseconds) multi = 1.0e-9;
+	else multi = 1.0e-6;
+	globalArgs.cpuPeriod = 1.0 /((double)globalArgs.cpuHz * multi);
 	
 	// Prepare histogram
 	for (i = 0; i < NPT_HISTOGRAM_SIZE; i++) histogram[i] = 0;
 	histogramOverruns = 0;
 	
 	// Start cycling
+	CPU_ZERO(&cpuMask);
+	CPU_SET(1, &cpuMask);
+	sched_setaffinity(0, sizeof(cpuMask), &cpuMask);
+	setrtpriority(99, SCHED_FIFO);
 	cycle();
+	setrtpriority(0, SCHED_OTHER);
 	
 	// Generate and print the histogram
 	print_histogram();
