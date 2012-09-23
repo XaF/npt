@@ -1,6 +1,6 @@
 
 #undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER ust_npt
+#define TRACEPOINT_PROVIDER npt
 
 #if !defined(_TRACEPOINT_UST_NPT_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
 #define _TRACEPOINT_UST_NPT_H
@@ -11,7 +11,12 @@ extern "C" {
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(ust_npt, nptloop,
+TRACEPOINT_EVENT(npt, start,
+	TP_ARGS(),
+	TP_FIELDS()
+)
+
+TRACEPOINT_EVENT(npt, loop,
 	TP_ARGS(
 		int, countloop,
 		long, ticks,
@@ -22,6 +27,11 @@ TRACEPOINT_EVENT(ust_npt, nptloop,
 		ctf_integer(long, ticks, ticks)
 		ctf_float(double, duration, duration)
 	)
+)
+
+TRACEPOINT_EVENT(npt, stop,
+	TP_ARGS(),
+	TP_FIELDS()
 )
 
 #endif /* _TRACEPOINT_UST_NPT_H */

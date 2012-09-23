@@ -331,6 +331,10 @@ int cycle() {
 	t0 = rdtsc();
 	t1 = t0;
 
+#	ifdef NPT_LTTNG_UST
+	tracepoint(npt, start);
+#	endif /* NPT_LTTNG_UST */
+
 	// We are cycling NPT_NOCOUNTLOOP more times to let the system
 	// enters in the cycle period we want to analyze
 	while (counter < globalArgs.loops+NPT_NOCOUNTLOOP) {
@@ -338,7 +342,7 @@ int cycle() {
 		duration = diff(t1, t0);
 
 #		ifdef NPT_LTTNG_UST
-		tracepoint(ust_npt, nptloop, counter, t0-t1, duration);
+		tracepoint(npt, loop, counter, t0-t1, duration);
 #		endif /* NPT_LTTNG_UST */
 
 
@@ -366,6 +370,11 @@ int cycle() {
 		t1 = t0;
 		t0 = rdtsc();
 	}
+
+#	ifdef NPT_LTTNG_UST
+	tracepoint(npt, stop);
+#	endif /* NPT_LTTNG_UST */
+
 	// Readapt the counter to the number of counted cycles
 	counter = counter-NPT_NOCOUNTLOOP;
 
