@@ -51,6 +51,7 @@ struct globalArgs_t {
 	bool trace_kernel;	/* -t option */
 	int picoseconds;	/* flag */
 	int nanoseconds;	/* flag */
+	int evaluateSpeed;	/* flag */
 	
 	int priority;		/* not an option yet */
 	int affinity;		/* not an option yet */
@@ -75,6 +76,7 @@ void initopt() {
 	globalArgs.nanoseconds = false;
 	globalArgs.priority = 99;
 	globalArgs.affinity = 1;
+	globalArgs.evaluateSpeed = 0;
 }
 
 #ifdef NPT_ALLOW_VERBOSITY
@@ -129,8 +131,9 @@ int npt_getopt(int argc, char **argv) {
 #			endif /* NPT_ALLOW_VERBOSITY */
 
 			// Flags options
-			{"picoseconds",	no_argument, &globalArgs.picoseconds, true},
-			{"nanoseconds",	no_argument, &globalArgs.nanoseconds, true},
+			{"picoseconds",		no_argument, &globalArgs.picoseconds, true},
+			{"nanoseconds",		no_argument, &globalArgs.nanoseconds, true},
+			{"eval-cpu-speed",	no_argument, &globalArgs.evaluateSpeed, true},
 			{0, 0, 0, 0}
 		};
 		/* getopt_long stores the option index here. */
@@ -222,9 +225,46 @@ struct timespec *_timespec_diff(struct timespec *ts1, struct timespec *ts2) {
 }
 
 /**
+ * Stress the CPU to disallow frequency scaling
+ */
+void __inline__ _cpu_stress() {
+	// We have to stress the CPU to be sure it's not in frequency scaling
+	volatile uint64_t i;
+	for (i = 0; i < 100000000; i++);
+}
+
+/**
+ * Gets the cpu speed from /proc/cpuinfo
+ */
+unsigned long _get_cpu_speed_from_proc_cpuinfo() {
+	FILE *pp;
+	char buf[30];
+	char* cmdLine;
+
+	asprintf(&cmdLine, "grep \"cpu MHz\" /proc/cpuinfo | head -n%d \
+			| tail -n1 | cut -d':' -f2 | tr -d ' \n\r'",
+			(globalArgs.affinity+1));
+
+	_cpu_stress();
+
+	if ((pp = popen(cmdLine, "r")) == NULL) {
+		perror("unable to find CPU speed");
+		free(cmdLine);
+		return -1;
+	}
+	free(cmdLine);
+
+	if (fgets(buf, sizeof(buf), pp)) {
+		return (unsigned long)(atof(buf) * 1.0e6);
+	}
+
+	return 0;
+}
+
+/**
  * Gets the cpu speed by testing the system
  */
-unsigned long get_cpu_speed() {
+unsigned long _evaluate_cpu_speed() {
 	struct timespec ts0, ts1;
 	uint64_t t0 = 0, t1 = 0;
 	
@@ -232,9 +272,7 @@ unsigned long get_cpu_speed() {
 	clock_gettime(CLOCK_MONOTONIC_RAW, &ts0);
 	t0 = rdtsc();
 	
-	// We have to stress the CPU to be sure it's not in frequency scaling
-	volatile uint64_t i;
-	for (i = 0; i < 100000000; i++);
+	_cpu_stress();
 	
 	// Time after CPU stress
 	t1 = rdtsc();
@@ -244,6 +282,11 @@ unsigned long get_cpu_speed() {
 	struct timespec *ts = _timespec_diff(&ts1, &ts0);
 	uint64_t ts_nsec = ts->tv_sec * 1000000000LL + ts->tv_nsec;
 	return (unsigned long)((double)(t1 - t0) / (double)ts_nsec * 1.0e9);
+}
+
+unsigned long get_cpu_speed() {
+	if (globalArgs.evaluateSpeed) return _evaluate_cpu_speed();
+	else return _get_cpu_speed_from_proc_cpuinfo();
 }
 
 /**
@@ -411,7 +454,9 @@ int main (int argc, char **argv) {
 	else multi = 1.0e6;
 	globalArgs.cpuPeriod = multi / (double)globalArgs.cpuHz;
 	
-	printf("# CPU frequency (evaluation): %.02f MHz\n", globalArgs.cpuHz / 1e6);
+	printf("# CPU frequency (%s): %.02f MHz\n",
+		((globalArgs.evaluateSpeed)?"evaluation":"/proc/cpuinfo"),
+		globalArgs.cpuHz / 1e6);
 	
 	// Start cycling
 	cycle();
