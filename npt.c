@@ -208,6 +208,7 @@ int npt_getopt(int argc, char **argv) {
 
 			default:
 				abort();
+				break;
 		}
 	}
 
@@ -250,9 +251,12 @@ unsigned long _get_cpu_speed_from_proc_cpuinfo() {
 	char buf[30];
 	char* cmdLine;
 
-	asprintf(&cmdLine, "grep \"cpu MHz\" /proc/cpuinfo | head -n%d \
+	int ret = asprintf(&cmdLine, "grep \"cpu MHz\" /proc/cpuinfo | head -n%d \
 			| tail -n1 | cut -d':' -f2 | tr -d ' \n\r'",
 			(globalArgs.affinity+1));
+
+	if (!ret)
+		return -1;
 
 	_cpu_stress();
 
@@ -272,6 +276,9 @@ unsigned long _get_cpu_speed_from_proc_cpuinfo() {
 
 /**
  * Gets the cpu speed by testing the system
+ *
+ * Using CLOCK_MONOTONIC_RAW to avoid NTP adjustment
+ * requires linux >= 2.6.28
  */
 unsigned long _evaluate_cpu_speed() {
 	struct timespec ts0, ts1;
