@@ -23,6 +23,7 @@
 #include <errno.h>		// errno
 #include <sys/io.h>		// iopl
 #include <unistd.h>		// getuid
+#include <sys/mman.h>	// mlockall
 
 #include <config.h>
 
@@ -275,24 +276,32 @@ unsigned long _get_cpu_speed_from_proc_cpuinfo() {
 }
 
 /**
- * Gets the cpu speed by testing the system
- *
- * Using CLOCK_MONOTONIC_RAW to avoid NTP adjustment
+ * Use CLOCK_MONOTONIC_RAW if available to avoid NTP adjustment
  * requires linux >= 2.6.28
+ */
+#ifdef CLOCK_MONOTONIC_RAW
+#	define NPT_CLOCK_MONOTONIC CLOCK_MONOTONIC_RAW
+#else
+#	define NPT_CLOCK_MONOTONIC CLOCK_MONOTONIC
+#	warning Using CLOCK_MONOTONIC as CLOCK_MONOTONIC_RAW is not available
+#endif
+
+/**
+ * Gets the cpu speed by testing the system
  */
 unsigned long _evaluate_cpu_speed() {
 	struct timespec ts0, ts1;
 	uint64_t t0 = 0, t1 = 0;
 
 	// Time before CPU stress
-	clock_gettime(CLOCK_MONOTONIC_RAW, &ts0);
+	clock_gettime(NPT_CLOCK_MONOTONIC, &ts0);
 	t0 = rdtsc();
 
 	_cpu_stress();
 
 	// Time after CPU stress
 	t1 = rdtsc();
-	clock_gettime(CLOCK_MONOTONIC_RAW, &ts1);
+	clock_gettime(NPT_CLOCK_MONOTONIC, &ts1);
 
 	// We compare clock_gettime and rdtsc values
 	struct timespec *ts = _timespec_diff(&ts1, &ts0);
@@ -300,6 +309,9 @@ unsigned long _evaluate_cpu_speed() {
 	return (unsigned long)((double)(t1 - t0) / (double)ts_nsec * 1.0e9);
 }
 
+/**
+ * Return cpu speed with respect to the choice of evaluation or not
+ */
 unsigned long get_cpu_speed() {
 	if (globalArgs.evaluateSpeed) return _evaluate_cpu_speed();
 	else return _get_cpu_speed_from_proc_cpuinfo();
@@ -478,6 +490,8 @@ static __inline__ void cli() {
  */
 int setrtmode(bool rt) {
 	if (rt) {
+		VERBOSE(1, "Enable RT mode");
+			
 		// Set CPU affinity
 		cpu_set_t cpuMask;
 		CPU_ZERO(&cpuMask);
@@ -494,9 +508,19 @@ int setrtmode(bool rt) {
 			printf("# Application priority set to %d\n", globalArgs.priority);
 		else return EXIT_FAILURE;
 
+		// Lock the memory to disable swapping
+		if (mlockall(MCL_CURRENT | MCL_FUTURE) == EXIT_SUCCESS)
+			VERBOSE(1, "Current and future memory locked");
+		else {
+			fprintf(stderr, "Error: unable to lock memory, %s (%d)\n", strerror(errno), errno);
+			return EXIT_FAILURE;
+		}
+
 		// Disable local IRQs
 		cli();
 	} else {
+		VERBOSE(1, "Disable RT mode");
+		
 		// Reset scheduler to default
 		if (setrtpriority(0, SCHED_OTHER) != EXIT_SUCCESS)
 			return EXIT_FAILURE;
@@ -519,7 +543,7 @@ int main (int argc, char **argv) {
 	
 	// Init options and load command line arguments
 	initopt();
-	if (npt_getopt(argc, argv) != 0) exit(1);
+	if (npt_getopt(argc, argv) != EXIT_SUCCESS) exit(1);
 
 	// Prepare histogram
 	for (i = 0; i < NPT_HISTOGRAM_SIZE; i++) histogram[i] = 0;
