@@ -231,6 +231,10 @@ int npt_getopt(int argc, char **argv) {
 	return 0;
 }
 
+/**
+ * Function taken from
+ * http://aufather.wordpress.com/2010/09/08/high-performance-time-measuremen-in-linux/
+ */
 struct timespec *_timespec_diff(struct timespec *ts1, struct timespec *ts2) {
 	static struct timespec ts;
 	ts.tv_sec = ts1->tv_sec - ts2->tv_sec;
