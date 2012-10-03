@@ -7,7 +7,6 @@
  * modify it under the terms of the GNU General Public License Version
  * 2 as published by the Free Software Foundation.
  */
-
 #include <ctype.h>
 #include <stdio.h>
 #include <stdint.h>		// int64_t, INT64_MAX
@@ -250,9 +249,8 @@ struct timespec *_timespec_diff(struct timespec *ts1, struct timespec *ts2) {
  * Stress the CPU to disallow frequency scaling
  */
 void __inline__ _cpu_stress() {
-	// We have to stress the CPU to be sure it's not in frequency scaling
 	volatile uint64_t i;
-	for (i = 0; i < 100000000; i++);
+	for (i = 0; i < 1e8; i++);
 }
 
 /**
@@ -263,8 +261,8 @@ unsigned long _get_cpu_speed_from_proc_cpuinfo() {
 	char buf[30];
 	char* cmdLine;
 
-	int ret = asprintf(&cmdLine, "grep \"cpu MHz\" /proc/cpuinfo | head -n%d \
-			| tail -n1 | cut -d':' -f2 | tr -d ' \n\r'",
+	int ret = asprintf(&cmdLine, "grep \"cpu MHz\" /proc/cpuinfo \
+			| head -n%d | tail -n1 | cut -d':' -f2 | tr -d ' \n\r'",
 			(globalArgs.affinity+1));
 
 	if (!ret)
@@ -316,7 +314,7 @@ unsigned long _evaluate_cpu_speed() {
 
 	// We compare clock_gettime and rdtsc values
 	struct timespec *ts = _timespec_diff(&ts1, &ts0);
-	uint64_t ts_nsec = ts->tv_sec * 1000000000LL + ts->tv_nsec;
+	uint64_t ts_nsec = ts->tv_sec * 1e9LL + ts->tv_nsec;
 	return (unsigned long)((double)(t1 - t0) / (double)ts_nsec * 1.0e9);
 }
 
@@ -333,7 +331,8 @@ unsigned long get_cpu_speed() {
  */
 static __inline__ double diff(uint64_t start, uint64_t end) {
 	if (globalArgs.cpuHz == 0) return 0.0;
-	else if (end < start) return (double)(UINT64_MAX-start+end+1) * globalArgs.cpuPeriod;
+	else if (end < start)
+		return (double)(UINT64_MAX-start+end+1) * globalArgs.cpuPeriod;
 	else return (double)(end-start) * globalArgs.cpuPeriod;
 }
 
@@ -389,11 +388,14 @@ int cycle() {
 
 			// For variance and standard deviation
 			deltaDuration = duration - meanDuration;
-			meanDuration = meanDuration + deltaDuration / (double)(counter-NPT_NOCOUNTLOOP);
-			meanSquared = meanSquared + deltaDuration * (duration - meanDuration);
+			meanDuration = meanDuration
+				+ deltaDuration / (double)(counter-NPT_NOCOUNTLOOP);
+			meanSquared = meanSquared
+				+ deltaDuration * (duration - meanDuration);
 
 			// Store data in the histogram if duration < max size
-			if (duration < NPT_HISTOGRAM_SIZE) histogram[(int)duration]++;
+			if (duration < NPT_HISTOGRAM_SIZE)
+				histogram[(int)duration]++;
 			else histogramOverruns++;
 		}
 
