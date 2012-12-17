@@ -314,7 +314,7 @@ unsigned long _evaluate_cpu_speed() {
 
 	// We compare clock_gettime and rdtsc values
 	struct timespec *ts = _timespec_diff(&ts1, &ts0);
-	uint64_t ts_nsec = ts->tv_sec * 1e9LL + ts->tv_nsec;
+	uint64_t ts_nsec = ts->tv_sec * 1000000000LL + ts->tv_nsec;
 	return (unsigned long)((double)(t1 - t0) / (double)ts_nsec * 1.0e9);
 }
 
