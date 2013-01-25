@@ -517,8 +517,8 @@ int setrtmode(bool rt) {
 		// Set CPU affinity
 		cpu_set_t cpuMask;
 		CPU_ZERO(&cpuMask);
-		CPU_SET(1, &cpuMask);
-		if (sched_setaffinity(globalArgs.affinity, sizeof(cpuMask), &cpuMask) == EXIT_SUCCESS)
+		CPU_SET(globalArgs.affinity, &cpuMask);
+		if (sched_setaffinity(getpid(), sizeof(cpuMask), &cpuMask) == EXIT_SUCCESS)
 			printf("# CPU affinity set on CPU %d\n", globalArgs.affinity);
 		else {
 			fprintf(stderr, "Error: unable to set CPU affinity, %s (%d)\n", strerror(errno), errno);
