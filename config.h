@@ -1,4 +1,9 @@
 /**
+ * Enable DEBUG messages
+ */
+//#define DEBUG
+
+/**
  * Define if you want or not to enable the verbose mode during execution
  */
 #define NPT_ALLOW_VERBOSITY 1

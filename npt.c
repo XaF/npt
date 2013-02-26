@@ -170,9 +170,11 @@ int npt_getopt(int argc, char **argv) {
 				/* If this option set a flag, do nothing else now. */
 				if (long_options[option_index].flag != 0) break;
 
+#				ifdef DEBUG
 				printf ("option %s", long_options[option_index].name);
 				if (optarg) printf (" with arg %s", optarg);
-				printf ("\n");
+				printf (" not available\n");
+#				endif /* DEBUG */
 				break;
 
 			// Option --loops (-l)
@@ -219,6 +221,7 @@ int npt_getopt(int argc, char **argv) {
 		}
 	}
 
+#	ifdef DEBUG
 	/* Print any remaining command line arguments (not options). */
 	if (optind < argc) {
 		printf ("non-option ARGV-elements: ");
@@ -226,6 +229,7 @@ int npt_getopt(int argc, char **argv) {
 			printf ("%s ", argv[optind++]);
 		putchar ('\n');
 	}
+#	endif /* DEBUG */
 
 	return 0;
 }
