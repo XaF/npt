@@ -58,6 +58,7 @@ struct globalArgs_t {
 	int verbosity;		/* -v option */
 #	endif /* NPT_ALLOW_VERBOSITY */
 
+	unsigned int affinity;	/* -a option */
 	uint64_t loops;		/* -l option */
 	char* output;		/* -o option */
 	bool trace_ust;		/* -t option */
@@ -67,7 +68,6 @@ struct globalArgs_t {
 	int evaluateSpeed;	/* flag */
 
 	int priority;		/* not an option yet */
-	int affinity;		/* not an option yet */
 
 	unsigned long cpuHz;
 	double cpuPeriod;
@@ -135,6 +135,7 @@ uint64_t histogramOverruns;
 void npt_help() {
 	printf("non-preempt test (npt) v%1.2f\n", NPT_VERSION);
 	printf(	"usage: npt <options>\n\n"
+		"	-a CPU		--affinity=NUM		pin the process to the thread NUM (default: %d)\n"
 		"			--eval-cpu-speed	evaluate the CPU speed instead of reading it\n"
 		"						from /proc/cpuinfo\n"
 		"	-h		--help			show this message\n"
@@ -142,6 +143,7 @@ void npt_help() {
 		"	-o OUTPUT	--output=OUTPUT		output file for storing the report and histogram\n"
 		"			--nanoseconds		do the report and the histogram in nanoseconds\n"
 		"			--picoseconds		do the report and the histogram in picoseconds\n"
+		globalArgs.affinity,
 	      );
 }
 
@@ -155,6 +157,7 @@ int npt_getopt(int argc, char **argv) {
 	while (1) {
 		static struct option long_options[] = {
 			// Regular options
+			{"affinity",		required_argument,	0,	'a'},
 			{"help",		no_argument,		0,	'h'},
 			{"loops",		required_argument,	0,	'l'},
 			{"output",		required_argument,	0,	'o'},
@@ -173,9 +176,9 @@ int npt_getopt(int argc, char **argv) {
 		int option_index = 0;
 
 #		if NPT_ALLOW_VERBOSITY == 1
-		char* shortopt = {"hl:o:t:v"};
+		char* shortopt = {"a:hl:o:t:v"};
 #		else /* NPT_ALLOW_VERBOSITY */
-		char* shortopt = {"hl:o:t:"};
+		char* shortopt = {"a:hl:o:t:"};
 #		endif /* NPT_ALLOW_VERBOSITY */
 
 		c = getopt_long(argc, argv, shortopt,
@@ -194,6 +197,18 @@ int npt_getopt(int argc, char **argv) {
 				if (optarg) printf (" with arg %s", optarg);
 				printf (" not available\n");
 #				endif /* DEBUG */
+				break;
+
+			// Option --affinity (-a)
+			case 'a':
+				if (sscanf(optarg, "%u", &globalArgs.affinity) == 0
+					|| globalArgs.affinity >= sysconf(_SC_NPROCESSORS_ONLN)) {
+					fprintf(stderr,
+						"--affinity: argument must be an integer between 0 and %ld\n",
+						sysconf(_SC_NPROCESSORS_ONLN)-1
+					       );
+					return 1;
+				}
 				break;
 
 			// Option --help (-h)
