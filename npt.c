@@ -164,9 +164,9 @@ int npt_getopt(int argc, char **argv) {
 #			endif /* NPT_ALLOW_VERBOSITY */
 
 			// Flags options
-			{"picoseconds",		no_argument, &globalArgs.picoseconds, true},
-			{"nanoseconds",		no_argument, &globalArgs.nanoseconds, true},
 			{"eval-cpu-speed",	no_argument, &globalArgs.evaluateSpeed, true},
+			{"nanoseconds",		no_argument, &globalArgs.nanoseconds, true},
+			{"picoseconds",		no_argument, &globalArgs.picoseconds, true},
 			{0, 0, 0, 0}
 		};
 		/* getopt_long stores the option index here. */
