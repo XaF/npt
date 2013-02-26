@@ -9,19 +9,19 @@
  */
 #include <ctype.h>
 #include <stdio.h>
-#include <stdint.h>		// int64_t, INT64_MAX
+#include <stdint.h>	// int64_t, INT64_MAX
 #include <stdbool.h>	// bool, true, false
 #include <stdlib.h>
-#include <limits.h>		// INT_MAX
-#include <string.h>		// strerror, strcmp
+#include <limits.h>	// INT_MAX
+#include <string.h>	// strerror, strcmp
 #include <inttypes.h>	// PRIu64
-#include <getopt.h>		// getopt_long
-#include <math.h>		// sqrt
-#include <sched.h>		// sched_*
-#include <time.h>		// struct timespec, clock_gettime
-#include <errno.h>		// errno
-#include <sys/io.h>		// iopl
-#include <unistd.h>		// getuid
+#include <getopt.h>	// getopt_long
+#include <math.h>	// sqrt
+#include <sched.h>	// sched_*
+#include <time.h>	// struct timespec, clock_gettime
+#include <errno.h>	// errno
+#include <sys/io.h>	// iopl
+#include <unistd.h>	// getuid
 #include <sys/mman.h>	// mlockall
 
 #include <config.h>
