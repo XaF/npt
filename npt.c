@@ -515,6 +515,8 @@ static __inline__ void cli() {
  * Set the different parameters to favor RT
  */
 int setrtmode(bool rt) {
+	int ret = EXIT_SUCCESS;
+
 	if (rt) {
 		VERBOSE(1, "Enable RT mode");
 			
@@ -547,15 +549,16 @@ int setrtmode(bool rt) {
 	} else {
 		VERBOSE(1, "Disable RT mode");
 		
-		// Reset scheduler to default
+		// Reset scheduler to default, don't "return" directly
+		// as we don't want to prevent the enable of the local IRQs
 		if (setrtpriority(0, SCHED_OTHER) != EXIT_SUCCESS)
-			return EXIT_FAILURE;
+			ret = EXIT_FAILURE;
 
 		// Enable local IRQs
 		sti();
 	}
 	
-	return EXIT_SUCCESS;
+	return ret;
 }
 
 int main (int argc, char **argv) {
