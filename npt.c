@@ -589,16 +589,16 @@ int setrtmode(bool rt) {
 int main (int argc, char **argv) {
 	int i, ret = 0;
 
+	// Init options and load command line arguments
+	initopt();
+	if (npt_getopt(argc, argv) != EXIT_SUCCESS) exit(1);
+
 	// Running as root ?
 	if (getuid() != 0) {
 			fprintf(stderr, "Root access is needed. -- Aborting!\n");
 			return EXIT_FAILURE;
 	}
 	
-	// Init options and load command line arguments
-	initopt();
-	if (npt_getopt(argc, argv) != EXIT_SUCCESS) exit(1);
-
 	// Prepare histogram
 	for (i = 0; i < NPT_HISTOGRAM_SIZE; i++) histogram[i] = 0;
 	histogramOverruns = 0;
