@@ -61,13 +61,13 @@ struct globalArgs_t {
 	unsigned int affinity;	/* -a option */
 	uint64_t loops;		/* -l option */
 	char* output;		/* -o option */
+	unsigned int priority;	/* -p option */
 	bool trace_ust;		/* -t option */
 	bool trace_kernel;	/* -t option */
 	int picoseconds;	/* flag */
 	int nanoseconds;	/* flag */
 	int evaluateSpeed;	/* flag */
 
-	int priority;		/* not an option yet */
 
 	unsigned long cpuHz;
 	double cpuPeriod;
@@ -143,7 +143,9 @@ void npt_help() {
 		"	-o OUTPUT	--output=OUTPUT		output file for storing the report and histogram\n"
 		"			--nanoseconds		do the report and the histogram in nanoseconds\n"
 		"			--picoseconds		do the report and the histogram in picoseconds\n"
+		"	-p PRIO		--prio=PRIO		priority to use as high prio process (default: %d)\n",
 		globalArgs.affinity,
+		globalArgs.priority
 	      );
 }
 
@@ -161,6 +163,7 @@ int npt_getopt(int argc, char **argv) {
 			{"help",		no_argument,		0,	'h'},
 			{"loops",		required_argument,	0,	'l'},
 			{"output",		required_argument,	0,	'o'},
+			{"prio",		required_argument,	0,	'p'},
 			{"trace",		required_argument,	0,	't'},
 #			if NPT_ALLOW_VERBOSITY == 1
 			{"verbose",		no_argument,		0,	'v'},
@@ -176,9 +179,9 @@ int npt_getopt(int argc, char **argv) {
 		int option_index = 0;
 
 #		if NPT_ALLOW_VERBOSITY == 1
-		char* shortopt = {"a:hl:o:t:v"};
+		char* shortopt = {"a:hl:o:p:t:v"};
 #		else /* NPT_ALLOW_VERBOSITY */
-		char* shortopt = {"a:hl:o:t:"};
+		char* shortopt = {"a:hl:o:p:t:"};
 #		endif /* NPT_ALLOW_VERBOSITY */
 
 		c = getopt_long(argc, argv, shortopt,
@@ -229,6 +232,15 @@ int npt_getopt(int argc, char **argv) {
 			case 'o':
 				if (asprintf(&globalArgs.output, "%s", optarg) < 0) {
 					fprintf(stderr, "--output: argument invalid\n");
+					return 1;
+				}
+				break;
+
+			// Option --prio (-p)
+			case 'p':
+				if (sscanf(optarg, "%u", &globalArgs.priority) == 0
+					|| globalArgs.priority > 99) {
+					fprintf(stderr, "--prio: argument must be an unsigned int between 0 and 99\n");
 					return 1;
 				}
 				break;
