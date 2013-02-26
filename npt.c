@@ -130,6 +130,22 @@ uint64_t histogram[NPT_HISTOGRAM_SIZE];
 uint64_t histogramOverruns;
 
 /**
+ * Show help message
+ */
+void npt_help() {
+	printf("non-preempt test (npt) v%1.2f\n", NPT_VERSION);
+	printf(	"usage: npt <options>\n\n"
+		"			--eval-cpu-speed	evaluate the CPU speed instead of reading it\n"
+		"						from /proc/cpuinfo\n"
+		"	-h		--help			show this message\n"
+		"	-l LOOPS	--loops=LOOPS		define the number of loops to do\n"
+		"	-o OUTPUT	--output=OUTPUT		output file for storing the report and histogram\n"
+		"			--nanoseconds		do the report and the histogram in nanoseconds\n"
+		"			--picoseconds		do the report and the histogram in picoseconds\n"
+	      );
+}
+
+/**
  * Treat line command options
  */
 int npt_getopt(int argc, char **argv) {
@@ -139,6 +155,7 @@ int npt_getopt(int argc, char **argv) {
 	while (1) {
 		static struct option long_options[] = {
 			// Regular options
+			{"help",		no_argument,		0,	'h'},
 			{"loops",		required_argument,	0,	'l'},
 			{"output",		required_argument,	0,	'o'},
 			{"trace",		required_argument,	0,	't'},
@@ -156,9 +173,9 @@ int npt_getopt(int argc, char **argv) {
 		int option_index = 0;
 
 #		if NPT_ALLOW_VERBOSITY == 1
-		char* shortopt = {"l:o:t:v"};
+		char* shortopt = {"hl:o:t:v"};
 #		else /* NPT_ALLOW_VERBOSITY */
-		char* shortopt = {"l:o:t:"};
+		char* shortopt = {"hl:o:t:"};
 #		endif /* NPT_ALLOW_VERBOSITY */
 
 		c = getopt_long(argc, argv, shortopt,
@@ -177,6 +194,12 @@ int npt_getopt(int argc, char **argv) {
 				if (optarg) printf (" with arg %s", optarg);
 				printf (" not available\n");
 #				endif /* DEBUG */
+				break;
+
+			// Option --help (-h)
+			case 'h':
+				npt_help();
+				exit(0);
 				break;
 
 			// Option --loops (-l)
