@@ -26,7 +26,7 @@
 
 #include <config.h>
 
-#define NPT_VERSION 0.01
+#define NPT_VERSION 0.02
 
 #if NPT_TRACE == 1
 #	if NPT_LTTNG_UST == 1
