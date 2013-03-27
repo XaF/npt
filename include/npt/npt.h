@@ -40,37 +40,22 @@
 
 
 /**
- * Define if you want to enable tracing
- */
-#define NPT_TRACE 1
-
-/**
- * Define if you want to enable the LTTNG userspace tracer
- */
-#define NPT_LTTNG_UST 1
-
-/**
- * Define if you want to enable the LTTNG kernel tracer
- */
-#define NPT_LTTNG_KERNEL 1
-
-/**
  * Prepare the defines for tracing if necessary
  */
-#if NPT_TRACE == 1
-	#if HAVE_LIBLTTNG_UST == 1 && NPT_LTTNG_UST == 1
+#ifdef ENABLE_UST_TRACE
+	#ifdef HAVE_LIBLTTNG_UST
 		#define TRACEPOINT_DEFINE
 		#include <npt/tracepoints.h>
-	#else /* NPT_LTTNG_UST == 1 */
-		#undef NPT_LTTNG_UST
-	#endif /* NPT_LTTNG_UST == 1 */
-	#if NPT_LTTNG_KERNEL != 1
-		#undef NPT_LTTNG_KERNEL
-	#endif /* NPT_LTTNG_KERNEL != 1 */
-#else /* NPT_TRACE == 1 */
-	#undef NPT_LTTNG_UST
-	#undef NPT_LTTNG_KERNEL
-#endif /* NPT_TRACE == 1 */
+		#define UST_TRACE_START	tracepoint(npt, start);
+		#define UST_TRACE_LOOP	tracepoint(npt, loop, counter, t0-t1, duration);
+		#define UST_TRACE_STOP	tracepoint(npt, stop);
+	#else
+		#undef ENABLE_UST_TRACE
+		#define UST_TRACE_START
+		#define UST_TRACE_LOOP
+		#define UST_TRACE_STOP
+	#endif
+#endif
 
 
 /**

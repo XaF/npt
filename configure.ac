@@ -26,6 +26,19 @@ if test x$enableclisti = xtrue ; then
 	AC_DEFINE([ENABLE_CLI_STI], [1], [Define whether or not we can disable the interrupts])]
 fi
 
+AC_ARG_ENABLE([ust-trace],
+	AS_HELP_STRING([--disable-ust-trace], [disable the UST tracepoints in NPT]),
+	[case "${enableval}" in
+		yes) enableusttrace=true ;;
+		no)  enableusttrace=false ;;
+		*) AC_MSG_ERROR([bad value ${enableval} for --enable-ust-trace]) ;;
+	esac],[
+		enableusttrace=true
+])
+if test x$enableusttrace = xtrue ; then
+	AC_DEFINE([ENABLE_UST_TRACE], [1], [Define whether or not we want the UST tracepoints enabled if LTTng-UST is installed])]
+fi
+
 # Checks for libraries.
 PKG_CHECK_MODULES([LTTNG_UST], [lttng-ust], [
 		AC_CHECK_LIB([dl], [dlopen])

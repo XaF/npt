@@ -359,9 +359,7 @@ int cycle() {
 	t0 = rdtsc();
 	t1 = t0;
 
-#ifdef NPT_LTTNG_UST
-	tracepoint(npt, start);
-#endif /* NPT_LTTNG_UST */
+	UST_TRACE_START
 
 	// We are cycling NPT_NOCOUNTLOOP more times to let the system
 	// enters in the cycle period we want to analyze
@@ -369,10 +367,7 @@ int cycle() {
 		// Calculate diff between t0 and t1
 		duration = diff(t1, t0);
 
-#ifdef NPT_LTTNG_UST
-		tracepoint(npt, loop, counter, t0-t1, duration);
-#endif /* NPT_LTTNG_UST */
-
+		UST_TRACE_LOOP
 
 		// Increment counter as we have done one more cycle
 		counter++;
@@ -402,9 +397,7 @@ int cycle() {
 		t0 = rdtsc();
 	}
 
-#ifdef NPT_LTTNG_UST
-	tracepoint(npt, stop);
-#endif /* NPT_LTTNG_UST */
+	UST_TRACE_STOP
 
 	// Readapt the counter to the number of counted cycles
 	counter = counter-NPT_NOCOUNTLOOP;
