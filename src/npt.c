@@ -33,6 +33,7 @@
  */
 void initopt() {
 	VERBOSE_OPTION_INIT
+	CLI_STI_OPTION_INIT
 
 	globalArgs.loops = NPT_DEFAULT_LOOP_NUMBER;
 	globalArgs.output = NULL;
@@ -61,6 +62,7 @@ void npt_help() {
 		"			--eval-cpu-speed	evaluate the CPU speed instead of reading it\n"
 		"						from /proc/cpuinfo\n"
 		"	-h		--help			show this message\n"
+		CLI_STI_OPTION_HELP
 		"	-l LOOPS	--loops=LOOPS		define the number of loops to do\n"
 		"	-o OUTPUT	--output=OUTPUT		output file for storing the report and histogram\n"
 		"			--nanoseconds		do the report and the histogram in nanoseconds\n"
@@ -84,6 +86,7 @@ int npt_getopt(int argc, char **argv) {
 			// Regular options
 			{"affinity",		required_argument,	0,	'a'},
 			{"help",		no_argument,		0,	'h'},
+			CLI_STI_OPTION_LONG
 			{"loops",		required_argument,	0,	'l'},
 			{"output",		required_argument,	0,	'o'},
 			{"prio",		required_argument,	0,	'p'},
@@ -99,7 +102,7 @@ int npt_getopt(int argc, char **argv) {
 		/* getopt_long stores the option index here. */
 		int option_index = 0;
 
-		char* shortopt = {"a:hl:o:p:t:" VERBOSE_OPTION_SHORT };
+		char* shortopt = {"a:h" CLI_STI_OPTION_SHORT "l:o:p:t:" VERBOSE_OPTION_SHORT };
 
 		c = getopt_long(argc, argv, shortopt,
 				long_options, &option_index);
@@ -136,6 +139,9 @@ int npt_getopt(int argc, char **argv) {
 				npt_help();
 				exit(0);
 				break;
+
+			// Option --allow-interrupts (-i)
+			CLI_STI_OPTION_CASE
 
 			// Option --loops (-l)
 			case 'l':

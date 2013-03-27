@@ -34,6 +34,10 @@ struct globalArgs_t {
 	int verbosity;		/* -v option */
 #endif /* ENABLE_VERBOSE */
 
+#ifdef ENABLE_CLI_STI
+	bool allow_interrupts;        /* -i option */
+#endif /* ENABLE_CLI_STI */
+
 	unsigned int affinity;  /* -a option */
 	uint64_t loops;         /* -l option */
 	char* output;           /* -o option */
@@ -156,7 +160,20 @@ struct globalArgs_t {
 		__asm__ volatile ("cli":::"memory");
 		iopl(0); // Normal I/O privileges
 	}
+	#define CLI_STI_OPTION_INIT	globalArgs.allow_interrupts = false;
+	#define CLI_STI_OPTION_LONG	{"allow-interrupts",  no_argument,            0,      'i'},
+	#define CLI_STI_OPTION_SHORT	"i"
+	#define CLI_STI_OPTION_CASE	\
+		case 'i': \
+			globalArgs.allow_interrupts = true; \
+			break;
+	#define CLI_STI_OPTION_HELP	"        -i              --allow-interrupts      do not disable interrupts\n"
 #else /* ENABLE_CLI_STI */
 	#define sti()
 	#define cli()
+	#define CLI_STI_OPTION_INIT
+	#define CLI_STI_OPTION_LONG
+	#define CLI_STI_OPTION_SHORT
+	#define CLI_STI_OPTION_CASE
+	#define CLI_STI_OPTION_HELP
 #endif /* ENABLE_CLI_STI */
