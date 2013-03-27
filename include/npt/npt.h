@@ -4,11 +4,6 @@
 //#define DEBUG
 
 /**
- * Define if you want or not to enable the verbose mode during execution
- */
-#define NPT_ALLOW_VERBOSITY 1
-
-/**
  * Define the maximum duration of a cycle that will be stored in the
  * histogram (microseconds)
  */
@@ -35,9 +30,9 @@ double variance_n, stdDeviation;
  * Create a structure to store the variables
  */
 struct globalArgs_t {
-#ifdef NPT_ALLOW_VERBOSITY
+#ifdef ENABLE_VERBOSE
 	int verbosity;		/* -v option */
-#endif /* NPT_ALLOW_VERBOSITY */
+#endif /* ENABLE_VERBOSE */
 
 	unsigned int affinity;  /* -a option */
 	uint64_t loops;         /* -l option */
@@ -57,15 +52,30 @@ struct globalArgs_t {
 /**
  * The function used to show verbose messages
  */
-#ifdef NPT_ALLOW_VERBOSITY
+#ifdef ENABLE_VERBOSE
 	static __inline__ void verbose(int lvl, char* txt) {
 		if (lvl <= globalArgs.verbosity)
 			printf("DEBUG%d: %s\n", lvl, txt);
 	}
 	#define VERBOSE(lvl, txt) (verbose(lvl, txt))
-#else   /* NPT_ALLOW_VERBOSITY */
+	#define VERBOSE_OPTION_INIT	globalArgs.verbosity = 0;
+	#define VERBOSE_OPTION_LONG	{"verbose",             no_argument,            0,      'v'},
+	#define VERBOSE_OPTION_SHORT	"v"
+	#define VERBOSE_OPTION_CASE	\
+		case 'v': \
+			if (globalArgs.verbosity < INT_MAX) { \
+				globalArgs.verbosity++; \
+			} \
+			break;
+	#define VERBOSE_OPTION_HELP	"        -v              --verbose               increment verbosity level\n"
+#else   /* ENABLE_VERBOSE */
 	#define VERBOSE(lvl, txt) ((void)0)
-#endif  /* NPT_ALLOW_VERBOSITY */
+	#define VERBOSE_OPTION_INIT
+	#define VERBOSE_OPTION_LONG
+	#define VERBOSE_OPTION_SHORT
+	#define VERBOSE_OPTION_CASE
+	#define VERBOSE_OPTION_HELP
+#endif  /* ENABLE_VERBOSE */
 
 
 /**

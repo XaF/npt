@@ -32,9 +32,7 @@
  * Initialize options
  */
 void initopt() {
-#ifdef NPT_ALLOW_VERBOSITY
-	globalArgs.verbosity = 0;
-#endif /* NPT_ALLOW_VERBOSITY */
+	VERBOSE_OPTION_INIT
 
 	globalArgs.loops = NPT_DEFAULT_LOOP_NUMBER;
 	globalArgs.output = NULL;
@@ -67,7 +65,8 @@ void npt_help() {
 		"	-o OUTPUT	--output=OUTPUT		output file for storing the report and histogram\n"
 		"			--nanoseconds		do the report and the histogram in nanoseconds\n"
 		"			--picoseconds		do the report and the histogram in picoseconds\n"
-		"	-p PRIO		--prio=PRIO		priority to use as high prio process (default: %d)\n",
+		"	-p PRIO		--prio=PRIO		priority to use as high prio process (default: %d)\n"
+		VERBOSE_OPTION_HELP,
 		globalArgs.affinity,
 		globalArgs.priority
 	      );
@@ -89,9 +88,7 @@ int npt_getopt(int argc, char **argv) {
 			{"output",		required_argument,	0,	'o'},
 			{"prio",		required_argument,	0,	'p'},
 			{"trace",		required_argument,	0,	't'},
-#ifdef NPT_ALLOW_VERBOSITY
-			{"verbose",		no_argument,		0,	'v'},
-#endif /* NPT_ALLOW_VERBOSITY */
+			VERBOSE_OPTION_LONG
 
 			// Flags options
 			{"eval-cpu-speed",	no_argument, &globalArgs.evaluateSpeed, true},
@@ -102,11 +99,7 @@ int npt_getopt(int argc, char **argv) {
 		/* getopt_long stores the option index here. */
 		int option_index = 0;
 
-#ifdef NPT_ALLOW_VERBOSITY
-		char* shortopt = {"a:hl:o:p:t:v"};
-#else /* NPT_ALLOW_VERBOSITY */
-		char* shortopt = {"a:hl:o:p:t:"};
-#endif /* NPT_ALLOW_VERBOSITY */
+		char* shortopt = {"a:hl:o:p:t:" VERBOSE_OPTION_SHORT };
 
 		c = getopt_long(argc, argv, shortopt,
 				long_options, &option_index);
@@ -179,12 +172,8 @@ int npt_getopt(int argc, char **argv) {
 				}
 				break;
 
-#ifdef NPT_ALLOW_VERBOSITY
 			// Option --verbose (-v)
-			case 'v':
-				if (globalArgs.verbosity < INT_MAX) globalArgs.verbosity++;
-				break;
-#endif /* NPT_ALLOW_VERBOSITY */
+			VERBOSE_OPTION_CASE
 
 			case '?':
 				/* getopt_long already printed an error message. */

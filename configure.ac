@@ -39,6 +39,19 @@ if test x$enableusttrace = xtrue ; then
 	AC_DEFINE([ENABLE_UST_TRACE], [1], [Define whether or not we want the UST tracepoints enabled if LTTng-UST is installed])]
 fi
 
+AC_ARG_ENABLE([verbose],
+	AS_HELP_STRING([--disable-verbose], [disable the ability to enable verbose mode]),
+	[case "${enableval}" in
+		yes) enableverbose=true ;;
+		no)  enableverbose=false ;;
+		*) AC_MSG_ERROR([bad value ${enableval} for --disable-verbose]) ;;
+	esac],[
+		enableverbose=true
+])
+if test x$enableverbose = xtrue ; then
+	AC_DEFINE([ENABLE_VERBOSE], [1], [Define whether or not we want to allow verbose mode])]
+fi
+
 # Checks for libraries.
 PKG_CHECK_MODULES([LTTNG_UST], [lttng-ust], [
 		AC_CHECK_LIB([dl], [dlopen])
