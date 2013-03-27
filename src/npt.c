@@ -58,7 +58,7 @@ uint64_t histogramOverruns;
 void npt_help() {
 	printf("non-preempt test (npt) v%s\n", VERSION);
 	printf(	"usage: npt <options>\n\n"
-		"	-a CPU		--affinity=NUM		pin the process to the thread NUM (default: %d)\n"
+		"	-a CPU		--affinity=CPU		pin the process to the processor CPU (default: %d)\n"
 		"			--eval-cpu-speed	evaluate the CPU speed instead of reading it\n"
 		"						from /proc/cpuinfo\n"
 		"	-h		--help			show this message\n"
