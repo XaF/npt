@@ -28,21 +28,6 @@
 
 #include <npt/npt.h>
 
-#if NPT_TRACE == 1
-#	if HAVE_LIBLTTNG_UST == 1 && NPT_LTTNG_UST == 1
-#		define TRACEPOINT_DEFINE
-#		include <npt/tracepoints.h>
-#	else /* NPT_LTTNG_UST == 1 */
-#		undef NPT_LTTNG_UST
-#	endif /* NPT_LTTNG_UST == 1 */
-#	if NPT_LTTNG_KERNEL != 1
-#		undef NPT_LTTNG_KERNEL
-#	endif /* NPT_LTTNG_KERNEL != 1 */
-#else /* NPT_TRACE == 1 */
-#	undef NPT_LTTNG_UST
-#	undef NPT_LTTNG_KERNEL
-#endif /* NPT_TRACE == 1 */
-
 /**
  * Statistics variables
  */
@@ -54,9 +39,9 @@ double variance_n, stdDeviation;
  * Create a structure to store the variables
  */
 struct globalArgs_t {
-#	if NPT_ALLOW_VERBOSITY == 1
+#ifdef NPT_ALLOW_VERBOSITY
 	int verbosity;		/* -v option */
-#	endif /* NPT_ALLOW_VERBOSITY */
+#endif /* NPT_ALLOW_VERBOSITY */
 
 	unsigned int affinity;	/* -a option */
 	uint64_t loops;		/* -l option */
@@ -77,9 +62,9 @@ struct globalArgs_t {
  * Initialize options
  */
 void initopt() {
-#	if NPT_ALLOW_VERBOSITY == 1
+#ifdef NPT_ALLOW_VERBOSITY
 	globalArgs.verbosity = 0;
-#	endif /* NPT_ALLOW_VERBOSITY */
+#endif /* NPT_ALLOW_VERBOSITY */
 
 	globalArgs.loops = NPT_DEFAULT_LOOP_NUMBER;
 	globalArgs.output = NULL;
@@ -91,37 +76,6 @@ void initopt() {
 	globalArgs.affinity = 1;
 	globalArgs.evaluateSpeed = 0;
 }
-
-/**
- * The function used to show verbose messages
- */
-#if NPT_ALLOW_VERBOSITY == 1
-static __inline__ void verbose(int lvl, char* txt) {
-	if (lvl <= globalArgs.verbosity)
-		printf("DEBUG%d: %s\n", lvl, txt);
-}
-#define VERBOSE(lvl, txt) (verbose(lvl, txt))
-#else	/* NPT_ALLOW_VERBOSITY */
-#define VERBOSE(lvl, txt) ((void)0)
-#endif	/* NPT_ALLOW_VERBOSITY */
-
-/**
- * Function rdtsc (ReaD Time Stamp Counter) used to calculate the
- * duration of a cycle
- */
-#ifdef __i386
-static __inline__ uint64_t rdtsc() {
-	uint64_t x;
-	__asm__ volatile ("rdtsc" : "=A" (x));
-	return x;
-}
-#elif defined __amd64
-static __inline__ uint64_t rdtsc() {
-	uint64_t a, d;
-	__asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
-	return (d<<32) | a;
-}
-#endif
 
 /** The array used to store the histogram */
 uint64_t histogram[NPT_HISTOGRAM_SIZE];
@@ -165,9 +119,9 @@ int npt_getopt(int argc, char **argv) {
 			{"output",		required_argument,	0,	'o'},
 			{"prio",		required_argument,	0,	'p'},
 			{"trace",		required_argument,	0,	't'},
-#			if NPT_ALLOW_VERBOSITY == 1
+#ifdef NPT_ALLOW_VERBOSITY
 			{"verbose",		no_argument,		0,	'v'},
-#			endif /* NPT_ALLOW_VERBOSITY */
+#endif /* NPT_ALLOW_VERBOSITY */
 
 			// Flags options
 			{"eval-cpu-speed",	no_argument, &globalArgs.evaluateSpeed, true},
@@ -178,11 +132,11 @@ int npt_getopt(int argc, char **argv) {
 		/* getopt_long stores the option index here. */
 		int option_index = 0;
 
-#		if NPT_ALLOW_VERBOSITY == 1
+#ifdef NPT_ALLOW_VERBOSITY
 		char* shortopt = {"a:hl:o:p:t:v"};
-#		else /* NPT_ALLOW_VERBOSITY */
+#else /* NPT_ALLOW_VERBOSITY */
 		char* shortopt = {"a:hl:o:p:t:"};
-#		endif /* NPT_ALLOW_VERBOSITY */
+#endif /* NPT_ALLOW_VERBOSITY */
 
 		c = getopt_long(argc, argv, shortopt,
 				long_options, &option_index);
@@ -195,11 +149,11 @@ int npt_getopt(int argc, char **argv) {
 				/* If this option set a flag, do nothing else now. */
 				if (long_options[option_index].flag != 0) break;
 
-#				ifdef DEBUG
+#ifdef DEBUG
 				printf ("option %s", long_options[option_index].name);
 				if (optarg) printf (" with arg %s", optarg);
 				printf (" not available\n");
-#				endif /* DEBUG */
+#endif /* DEBUG */
 				break;
 
 			// Option --affinity (-a)
@@ -255,12 +209,12 @@ int npt_getopt(int argc, char **argv) {
 				}
 				break;
 
-#			if NPT_ALLOW_VERBOSITY == 1
+#ifdef NPT_ALLOW_VERBOSITY
 			// Option --verbose (-v)
 			case 'v':
 				if (globalArgs.verbosity < INT_MAX) globalArgs.verbosity++;
 				break;
-#			endif /* NPT_ALLOW_VERBOSITY */
+#endif /* NPT_ALLOW_VERBOSITY */
 
 			case '?':
 				/* getopt_long already printed an error message. */
@@ -273,7 +227,7 @@ int npt_getopt(int argc, char **argv) {
 		}
 	}
 
-#	ifdef DEBUG
+#ifdef DEBUG
 	/* Print any remaining command line arguments (not options). */
 	if (optind < argc) {
 		printf ("non-option ARGV-elements: ");
@@ -281,7 +235,7 @@ int npt_getopt(int argc, char **argv) {
 			printf ("%s ", argv[optind++]);
 		putchar ('\n');
 	}
-#	endif /* DEBUG */
+#endif /* DEBUG */
 
 	return 0;
 }
@@ -341,17 +295,6 @@ unsigned long _get_cpu_speed_from_proc_cpuinfo() {
 }
 
 /**
- * Use CLOCK_MONOTONIC_RAW if available to avoid NTP adjustment
- * requires linux >= 2.6.28
- */
-#ifdef CLOCK_MONOTONIC_RAW
-#	define NPT_CLOCK_MONOTONIC CLOCK_MONOTONIC_RAW
-#else
-#	define NPT_CLOCK_MONOTONIC CLOCK_MONOTONIC
-#	warning Using CLOCK_MONOTONIC as CLOCK_MONOTONIC_RAW is not available
-#endif
-
-/**
  * Gets the cpu speed by testing the system
  */
 unsigned long _evaluate_cpu_speed() {
@@ -395,7 +338,6 @@ static __inline__ double diff(uint64_t start, uint64_t end) {
 /**
  * The loop
  */
-#define UNITE(pico, nano) ((pico)?"ps":((nano)?"ns":"us"))
 int cycle() {
 	double duration = 0;
 	counter = 0;
@@ -417,9 +359,9 @@ int cycle() {
 	t0 = rdtsc();
 	t1 = t0;
 
-#	ifdef NPT_LTTNG_UST
+#ifdef NPT_LTTNG_UST
 	tracepoint(npt, start);
-#	endif /* NPT_LTTNG_UST */
+#endif /* NPT_LTTNG_UST */
 
 	// We are cycling NPT_NOCOUNTLOOP more times to let the system
 	// enters in the cycle period we want to analyze
@@ -427,9 +369,9 @@ int cycle() {
 		// Calculate diff between t0 and t1
 		duration = diff(t1, t0);
 
-#		ifdef NPT_LTTNG_UST
+#ifdef NPT_LTTNG_UST
 		tracepoint(npt, loop, counter, t0-t1, duration);
-#		endif /* NPT_LTTNG_UST */
+#endif /* NPT_LTTNG_UST */
 
 
 		// Increment counter as we have done one more cycle
@@ -460,9 +402,9 @@ int cycle() {
 		t0 = rdtsc();
 	}
 
-#	ifdef NPT_LTTNG_UST
+#ifdef NPT_LTTNG_UST
 	tracepoint(npt, stop);
-#	endif /* NPT_LTTNG_UST */
+#endif /* NPT_LTTNG_UST */
 
 	// Readapt the counter to the number of counted cycles
 	counter = counter-NPT_NOCOUNTLOOP;
@@ -544,29 +486,6 @@ int setrtpriority(int priority, int policy) {
 
 	return EXIT_SUCCESS;
 }
-
-#ifdef ENABLE_CLI_STI
-/**
- * Enable local IRQs
- */
-static __inline__ void sti() {
-	iopl(3); // High I/O privileges
-	__asm__ __volatile__ ("sti":::"memory");
-	iopl(0); // Normal I/O privileges
-}
-
-/**
- * Disable local IRQs
- */
-static __inline__ void cli() {
-	iopl(3); // High I/O privileges
-	__asm__ __volatile__ ("cli":::"memory");
-	iopl(0); // Normal I/O privileges
-}
-#else /* ENABLE_CLI_STI */
-#define sti()
-#define cli()
-#endif /* ENABLE_CLI_STI */
 
 /**
  * Set the different parameters to favor RT
