@@ -37,7 +37,7 @@ TRACEPOINT_EVENT(npt, stop,
 #endif /* _TRACEPOINT_UST_NPT_H */
 
 #undef TRACEPOINT_INCLUDE_FILE
-#define TRACEPOINT_INCLUDE_FILE ust_npt.h
+#define TRACEPOINT_INCLUDE_FILE npt/tracepoints.h
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

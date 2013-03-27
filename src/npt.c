@@ -7,6 +7,8 @@
  * modify it under the terms of the GNU General Public License Version
  * 2 as published by the Free Software Foundation.
  */
+#include <config.h>
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdint.h>	// int64_t, INT64_MAX
@@ -24,14 +26,12 @@
 #include <unistd.h>	// getuid
 #include <sys/mman.h>	// mlockall
 
-#include <config.h>
-
-#define NPT_VERSION 0.02
+#include <npt/npt.h>
 
 #if NPT_TRACE == 1
-#	if NPT_LTTNG_UST == 1
+#	if HAVE_LIBLTTNG_UST == 1 && NPT_LTTNG_UST == 1
 #		define TRACEPOINT_DEFINE
-#		include "ust_npt.h"
+#		include <npt/tracepoints.h>
 #	else /* NPT_LTTNG_UST == 1 */
 #		undef NPT_LTTNG_UST
 #	endif /* NPT_LTTNG_UST == 1 */
@@ -133,7 +133,7 @@ uint64_t histogramOverruns;
  * Show help message
  */
 void npt_help() {
-	printf("non-preempt test (npt) v%1.2f\n", NPT_VERSION);
+	printf("non-preempt test (npt) v%s\n", VERSION);
 	printf(	"usage: npt <options>\n\n"
 		"	-a CPU		--affinity=NUM		pin the process to the thread NUM (default: %d)\n"
 		"			--eval-cpu-speed	evaluate the CPU speed instead of reading it\n"

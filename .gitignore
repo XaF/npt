@@ -1,1 +1,34 @@
-npt
+# automake & autoconf files
+*.o
+*.so
+*.swp
+*.o
+*.swo
+*.pyc
+Makefile
+.libs/
+.deps/
+*~
+*.la
+*.lo
+Makefile.in
+*.loT
+*.info
+*.bz2
+*.tar
+configure
+aclocal.m4
+autom4te.cache/
+config.h
+config.h.in
+config.log
+config.status
+stamp-h1
+libtool
+tags
+
+# m4 macros not automatically generated
+config/
+
+# npt exec file
+src/npt
