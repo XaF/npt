@@ -12,6 +12,20 @@ AC_GNU_SOURCE
 # Checks for programs.
 AC_PROG_CC
 
+# Get configure options
+AC_ARG_ENABLE([cli-sti],
+	AS_HELP_STRING([--enable-cli-sti], [enable or disable the ability of npt to disable interrupts]),
+	[case "${enableval}" in
+		yes) enableclisti=true ;;
+		no)  enableclisti=false ;;
+		*) AC_MSG_ERROR([bad value ${enableval} for --enable-cli-sti]) ;;
+	esac],[
+		enableclisti=false
+])
+if test x$enableclisti = xtrue ; then
+	AC_DEFINE([ENABLE_CLI_STI], [1], [Define whether or not we can disable the interrupts])]
+fi
+
 # Checks for libraries.
 PKG_CHECK_MODULES([LTTNG_UST], [lttng-ust], [
 		AC_CHECK_LIB([dl], [dlopen])

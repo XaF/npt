@@ -545,6 +545,7 @@ int setrtpriority(int priority, int policy) {
 	return EXIT_SUCCESS;
 }
 
+#ifdef ENABLE_CLI_STI
 /**
  * Enable local IRQs
  */
@@ -562,6 +563,10 @@ static __inline__ void cli() {
 	__asm__ __volatile__ ("cli":::"memory");
 	iopl(0); // Normal I/O privileges
 }
+#else /* ENABLE_CLI_STI */
+#define sti()
+#define cli()
+#endif /* ENABLE_CLI_STI */
 
 /**
  * Set the different parameters to favor RT
