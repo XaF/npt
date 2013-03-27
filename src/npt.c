@@ -29,36 +29,6 @@
 #include <npt/npt.h>
 
 /**
- * Statistics variables
- */
-volatile uint64_t counter;
-double minDuration, maxDuration, sumDuration, meanDuration;
-double variance_n, stdDeviation;
-
-/**
- * Create a structure to store the variables
- */
-struct globalArgs_t {
-#ifdef NPT_ALLOW_VERBOSITY
-	int verbosity;		/* -v option */
-#endif /* NPT_ALLOW_VERBOSITY */
-
-	unsigned int affinity;	/* -a option */
-	uint64_t loops;		/* -l option */
-	char* output;		/* -o option */
-	unsigned int priority;	/* -p option */
-	bool trace_ust;		/* -t option */
-	bool trace_kernel;	/* -t option */
-	int picoseconds;	/* flag */
-	int nanoseconds;	/* flag */
-	int evaluateSpeed;	/* flag */
-
-
-	unsigned long cpuHz;
-	double cpuPeriod;
-} globalArgs;
-
-/**
  * Initialize options
  */
 void initopt() {
