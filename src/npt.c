@@ -576,7 +576,7 @@ int setrtmode(bool rt) {
 
 	if (rt) {
 		VERBOSE(1, "Enable RT mode");
-			
+
 		// Set CPU affinity
 		cpu_set_t cpuMask;
 		CPU_ZERO(&cpuMask);
@@ -605,7 +605,7 @@ int setrtmode(bool rt) {
 		cli();
 	} else {
 		VERBOSE(1, "Disable RT mode");
-		
+
 		// Reset scheduler to default, don't "return" directly
 		// as we don't want to prevent the enable of the local IRQs
 		if (setrtpriority(0, SCHED_OTHER) != EXIT_SUCCESS)
@@ -614,7 +614,7 @@ int setrtmode(bool rt) {
 		// Enable local IRQs
 		sti();
 	}
-	
+
 	return ret;
 }
 
@@ -630,7 +630,7 @@ int main (int argc, char **argv) {
 			fprintf(stderr, "Root access is needed. -- Aborting!\n");
 			return EXIT_FAILURE;
 	}
-	
+
 	// Prepare histogram
 	for (i = 0; i < NPT_HISTOGRAM_SIZE; i++) histogram[i] = 0;
 	histogramOverruns = 0;
