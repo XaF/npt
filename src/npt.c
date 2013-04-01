@@ -78,7 +78,8 @@ void npt_help() {
 		"			--nanoseconds		do the report and the histogram in nanoseconds\n"
 		"			--picoseconds		do the report and the histogram in picoseconds\n"
 		"	-p PRIO		--prio=PRIO		priority to use as high prio process (default: %d)\n"
-		VERBOSE_OPTION_HELP,
+		VERBOSE_OPTION_HELP
+		"	-V		--version		show the tool version\n",
 		globalArgs.affinity,
 		globalArgs.priority
 	      );
@@ -102,6 +103,7 @@ int npt_getopt(int argc, char **argv) {
 			{"prio",		required_argument,	0,	'p'},
 			{"trace",		required_argument,	0,	't'},
 			VERBOSE_OPTION_LONG
+			{"version",		no_argument,		0,	'V'},
 
 			// Flags options
 			{"eval-cpu-speed",	no_argument, &globalArgs.evaluateSpeed, true},
@@ -112,7 +114,7 @@ int npt_getopt(int argc, char **argv) {
 		/* getopt_long stores the option index here. */
 		int option_index = 0;
 
-		char* shortopt = {"a:h" CLI_STI_OPTION_SHORT "l:o:p:t:" VERBOSE_OPTION_SHORT };
+		char* shortopt = {"a:h" CLI_STI_OPTION_SHORT "l:o:p:t:" VERBOSE_OPTION_SHORT "V" };
 
 		c = getopt_long(argc, argv, shortopt,
 				long_options, &option_index);
@@ -190,6 +192,13 @@ int npt_getopt(int argc, char **argv) {
 
 			// Option --verbose (-v)
 			VERBOSE_OPTION_CASE
+
+			// Option --version (-V)
+			case 'V':
+				printf("non-preempt test (npt) %s\n", FULL_VERSION);
+				printf("Built on %s\n", BUILD_DATE);
+				exit(0);
+				break;
 
 			case '?':
 				/* getopt_long already printed an error message. */
