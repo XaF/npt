@@ -23,7 +23,7 @@ AC_ARG_ENABLE([cli-sti],
 		enableclisti=false
 ])
 if test x$enableclisti = xtrue ; then
-	AC_DEFINE([ENABLE_CLI_STI], [1], [Define whether or not we can disable the interrupts])]
+	AC_DEFINE([ENABLE_CLI_STI], [1], [Define whether or not we can disable the interrupts])
 fi
 
 AC_ARG_ENABLE([ust-trace],
@@ -36,7 +36,7 @@ AC_ARG_ENABLE([ust-trace],
 		enableusttrace=true
 ])
 if test x$enableusttrace = xtrue ; then
-	AC_DEFINE([ENABLE_UST_TRACE], [1], [Define whether or not we want the UST tracepoints enabled if LTTng-UST is installed])]
+	AC_DEFINE([ENABLE_UST_TRACE], [1], [Define whether or not we want the UST tracepoints enabled if LTTng-UST is installed])
 fi
 
 AC_ARG_ENABLE([verbose],
@@ -49,7 +49,7 @@ AC_ARG_ENABLE([verbose],
 		enableverbose=true
 ])
 if test x$enableverbose = xtrue ; then
-	AC_DEFINE([ENABLE_VERBOSE], [1], [Define whether or not we want to allow verbose mode])]
+	AC_DEFINE([ENABLE_VERBOSE], [1], [Define whether or not we want to allow verbose mode])
 fi
 
 # Checks for libraries.
