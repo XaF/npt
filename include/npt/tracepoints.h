@@ -62,6 +62,6 @@ TRACEPOINT_EVENT(npt, stop,
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>
 
-#ifdef __cplusplus 
+#ifdef __cplusplus
 }
 #endif
