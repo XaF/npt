@@ -12,7 +12,13 @@ AC_GNU_SOURCE
 # Checks for programs.
 AC_PROG_CC
 
+####
+####
 # Get configure options
+
+###
+# CLI/STI calls
+#
 AC_ARG_ENABLE([cli-sti],
 	AS_HELP_STRING([--enable-cli-sti], [enable or disable the ability of npt to disable interrupts]),
 	[case "${enableval}" in
@@ -26,6 +32,9 @@ if test x$enableclisti = xtrue ; then
 	AC_DEFINE([ENABLE_CLI_STI], [1], [Define whether or not we can disable the interrupts])
 fi
 
+###
+# Verbose
+#
 AC_ARG_ENABLE([verbose],
 	AS_HELP_STRING([--disable-verbose], [disable the ability to enable verbose mode]),
 	[case "${enableval}" in
@@ -39,7 +48,13 @@ if test x$enableverbose = xtrue ; then
 	AC_DEFINE([ENABLE_VERBOSE], [1], [Define whether or not we want to allow verbose mode])
 fi
 
+####
+####
 # Checks for libraries.
+
+###
+# LTTng-UST
+#
 AC_ARG_WITH([lttng-ust],
 	AS_HELP_STRING(
 		[--without-lttng-ust],
@@ -67,18 +82,34 @@ AS_IF([test \( "x${have_lttng_ust}" = "xyes" \) -a \( "x${with_lttng_ust}" = "xy
 		])
 ])
 
+###
+# Maths
+#
 AC_CHECK_LIB([m], [sqrt])
+
+###
+# Realtime
+#
 AC_CHECK_LIB([rt], [clock_gettime])
 
+####
+####
 # Checks for header files.
 AC_CHECK_HEADERS([inttypes.h limits.h stdint.h stdlib.h string.h unistd.h])
 
+####
+####
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
 AC_TYPE_UINT64_T
 
+####
+####
 # Checks for library functions.
 AC_CHECK_FUNCS([clock_gettime memset sqrt strerror])
+
+####
+####
 
 nptincludedir="${includedir}/npt"
 AC_SUBST(nptincludedir)
