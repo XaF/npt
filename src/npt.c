@@ -36,6 +36,7 @@
 #include <sys/mman.h>	// mlockall
 
 #include <npt/npt.h>
+#include <version.h>
 
 /**
  * Initialize options
@@ -65,7 +66,7 @@ uint64_t histogramOverruns;
  * Show help message
  */
 void npt_help() {
-	printf("non-preempt test (npt) v%s\n", VERSION);
+	printf("non-preempt test (npt) %s\n", FULL_VERSION);
 	printf(	"usage: npt <options>\n\n"
 		"	-a CPU		--affinity=CPU		pin the process to the processor CPU (default: %d)\n"
 		"			--eval-cpu-speed	evaluate the CPU speed instead of reading it\n"

@@ -32,3 +32,6 @@ config/
 
 # npt exec file
 src/npt
+
+# npt version file
+include/version.h
