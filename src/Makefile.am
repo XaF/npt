@@ -1,4 +1,6 @@
 
+AM_CFLAGS = -DBUILD_DATE="\"$$(LANG= date)\""
+
 bin_PROGRAMS = npt
 npt_SOURCES = npt.c
 if HAVE_LIBLTTNG_UST
