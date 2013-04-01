@@ -106,19 +106,17 @@ struct globalArgs_t {
 /**
  * Prepare the defines for tracing if necessary
  */
-#ifdef ENABLE_UST_TRACE
-	#ifdef HAVE_LIBLTTNG_UST
-		#define TRACEPOINT_DEFINE
-		#include <npt/tracepoints.h>
-		#define UST_TRACE_START	tracepoint(npt, start);
-		#define UST_TRACE_LOOP	tracepoint(npt, loop, counter, t0-t1, duration);
-		#define UST_TRACE_STOP	tracepoint(npt, stop);
-	#else
-		#undef ENABLE_UST_TRACE
-		#define UST_TRACE_START
-		#define UST_TRACE_LOOP
-		#define UST_TRACE_STOP
-	#endif
+#if defined(WITH_LTTNG_UST) && defined(HAVE_LIBLTTNG_UST)
+	#define TRACEPOINT_DEFINE
+	#include <npt/tracepoints.h>
+	#define UST_TRACE_START	tracepoint(npt, start);
+	#define UST_TRACE_LOOP	tracepoint(npt, loop, counter, t0-t1, duration);
+	#define UST_TRACE_STOP	tracepoint(npt, stop);
+#else
+	#undef WITH_UST_TRACE
+	#define UST_TRACE_START
+	#define UST_TRACE_LOOP
+	#define UST_TRACE_STOP
 #endif
 
 

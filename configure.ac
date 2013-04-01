@@ -26,19 +26,6 @@ if test x$enableclisti = xtrue ; then
 	AC_DEFINE([ENABLE_CLI_STI], [1], [Define whether or not we can disable the interrupts])
 fi
 
-AC_ARG_ENABLE([ust-trace],
-	AS_HELP_STRING([--disable-ust-trace], [disable the UST tracepoints in NPT]),
-	[case "${enableval}" in
-		yes) enableusttrace=true ;;
-		no)  enableusttrace=false ;;
-		*) AC_MSG_ERROR([bad value ${enableval} for --enable-ust-trace]) ;;
-	esac],[
-		enableusttrace=true
-])
-if test x$enableusttrace = xtrue ; then
-	AC_DEFINE([ENABLE_UST_TRACE], [1], [Define whether or not we want the UST tracepoints enabled if LTTng-UST is installed])
-fi
-
 AC_ARG_ENABLE([verbose],
 	AS_HELP_STRING([--disable-verbose], [disable the ability to enable verbose mode]),
 	[case "${enableval}" in
@@ -53,15 +40,33 @@ if test x$enableverbose = xtrue ; then
 fi
 
 # Checks for libraries.
-PKG_CHECK_MODULES([LTTNG_UST], [lttng-ust], [
+AC_ARG_WITH([lttng-ust],
+	AS_HELP_STRING(
+		[--without-lttng-ust],
+		[Define whether or not we want the UST tracepoints enabled if LTTng-UST is installed]
+	),
+	[],
+	[with_lttng_ust=auto]
+)
+PKG_CHECK_MODULES([LTTNG_UST], [lttng-ust],
+	[have_lttng_ust=yes],
+	[have_lttng_ust=no]
+)
+AM_CONDITIONAL([HAVE_LIBLTTNG_UST], [test "x$have_lttng_ust" = "xyes"])
+AS_IF([test \( "x${have_lttng_ust}" = "xyes" \) -a \( "x${with_lttng_ust}" = "xyes" -o "x${with_lttng_ust}" = "xauto" \)], [
 		AC_CHECK_LIB([dl], [dlopen])
 		AC_CHECK_LIB([lttng-ust], [main])
-		lttngust=true;
+		AC_DEFINE([WITH_LTTNG_UST], [1], [Define whether or not we want the UST tracepoints enabled if LTTng-UST is installed])
 	], [
-		AC_MSG_NOTICE([The LTTng-UST library was not found, npt tracepoints will not be available])
-		lttngust=false;
+		AS_IF([test "x$with_lttng_ust" = "xyes"], [
+			AC_MSG_ERROR([--with-lttng-ust was given but the LTTng-UST library was not found])
+		], [
+			AS_IF([test "x$with_lttng_ust" = "xauto"], [
+				AC_MSG_NOTICE([The LTTng-UST library was not found, npt tracepoints will not be available])
+			])
+		])
 ])
-AM_CONDITIONAL([HAVE_LIBLTTNG_UST], [test x$lttngust = xtrue])
+
 AC_CHECK_LIB([m], [sqrt])
 AC_CHECK_LIB([rt], [clock_gettime])
 
