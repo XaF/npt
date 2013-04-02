@@ -73,7 +73,7 @@ void npt_help() {
 		"						from /proc/cpuinfo\n"
 		"	-h		--help			show this message\n"
 		CLI_STI_OPTION_HELP
-		"	-l LOOPS	--loops=LOOPS		define the number of loops to do\n"
+		"	-l LOOPS	--loops=LOOPS		define the number of loops to do (default: %" PRIu64 ")\n"
 		"	-o OUTPUT	--output=OUTPUT		output file for storing the report and histogram\n"
 		"			--nanoseconds		do the report and the histogram in nanoseconds\n"
 		"			--picoseconds		do the report and the histogram in picoseconds\n"
@@ -81,6 +81,7 @@ void npt_help() {
 		VERBOSE_OPTION_HELP
 		"	-V		--version		show the tool version\n",
 		globalArgs.affinity,
+		globalArgs.loops,
 		globalArgs.priority
 	      );
 }
