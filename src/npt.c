@@ -69,7 +69,7 @@ void npt_help() {
 	printf("non-preempt test (npt) %s\n", FULL_VERSION);
 	printf(	"usage: npt <options>\n\n"
 		"	-a CPU		--affinity=CPU		pin the process to the processor CPU (default: %d)\n"
-		"			--eval-cpu-speed	evaluate the CPU speed instead of reading it\n"
+		"	-e		--eval-cpu-speed	evaluate the CPU speed instead of reading it\n"
 		"						from /proc/cpuinfo\n"
 		"	-h		--help			show this message\n"
 		CLI_STI_OPTION_HELP
@@ -97,6 +97,7 @@ int npt_getopt(int argc, char **argv) {
 		static struct option long_options[] = {
 			// Regular options
 			{"affinity",		required_argument,	0,	'a'},
+			{"eval-cpu-speed",	no_argument,		0,	'e'},
 			{"help",		no_argument,		0,	'h'},
 			CLI_STI_OPTION_LONG
 			{"loops",		required_argument,	0,	'l'},
@@ -107,7 +108,6 @@ int npt_getopt(int argc, char **argv) {
 			{"version",		no_argument,		0,	'V'},
 
 			// Flags options
-			{"eval-cpu-speed",	no_argument, &globalArgs.evaluateSpeed, true},
 			{"nanoseconds",		no_argument, &globalArgs.nanoseconds, true},
 			{"picoseconds",		no_argument, &globalArgs.picoseconds, true},
 			{0, 0, 0, 0}
@@ -115,7 +115,7 @@ int npt_getopt(int argc, char **argv) {
 		/* getopt_long stores the option index here. */
 		int option_index = 0;
 
-		char* shortopt = {"a:h" CLI_STI_OPTION_SHORT "l:o:p:t:" VERBOSE_OPTION_SHORT "V" };
+		char* shortopt = {"a:eh" CLI_STI_OPTION_SHORT "l:o:p:t:" VERBOSE_OPTION_SHORT "V" };
 
 		c = getopt_long(argc, argv, shortopt,
 				long_options, &option_index);
@@ -145,6 +145,11 @@ int npt_getopt(int argc, char **argv) {
 					       );
 					return 1;
 				}
+				break;
+
+			// Option --eval-cpu-speed (-e)
+			case 'e':
+				globalArgs.evaluateSpeed = true;
 				break;
 
 			// Option --help (-h)
