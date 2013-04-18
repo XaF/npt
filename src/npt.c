@@ -203,6 +203,7 @@ int npt_getopt(int argc, char **argv) {
 			case 'V':
 				printf("non-preempt test (npt) %s\n", FULL_VERSION);
 				printf("Built on %s\n", BUILD_DATE);
+				printf("%s", BUILD_OPTIONS);
 				exit(0);
 				break;
 

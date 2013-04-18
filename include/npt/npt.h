@@ -78,6 +78,7 @@ struct globalArgs_t {
  * The function used to show verbose messages
  */
 #ifdef ENABLE_VERBOSE
+	#define BUILD_OPTIONS_VERBOSE	" --enable-verbose"
 	static __inline__ void verbose(int lvl, char* txt) {
 		if (lvl <= globalArgs.verbosity)
 			printf("DEBUG%d: %s\n", lvl, txt);
@@ -94,6 +95,7 @@ struct globalArgs_t {
 			break;
 	#define VERBOSE_OPTION_HELP	"        -v              --verbose               increment verbosity level\n"
 #else   /* ENABLE_VERBOSE */
+	#define BUILD_OPTIONS_VERBOSE
 	#define VERBOSE(lvl, txt) ((void)0)
 	#define VERBOSE_OPTION_INIT
 	#define VERBOSE_OPTION_LONG
@@ -162,6 +164,7 @@ struct globalArgs_t {
  * depending on the configure option
  */
 #ifdef ENABLE_CLI_STI
+	#define BUILD_OPTIONS_CLI_STI	" --enable-cli-sti"
 	/**
 	 * Enable local IRQs
 	 */
@@ -188,6 +191,7 @@ struct globalArgs_t {
 			break;
 	#define CLI_STI_OPTION_HELP	"        -i              --allow-interrupts      do not disable interrupts\n"
 #else /* ENABLE_CLI_STI */
+	#define BUILD_OPTIONS_CLI_STI
 	#define sti()
 	#define cli()
 	#define CLI_STI_OPTION_INIT
@@ -196,3 +200,21 @@ struct globalArgs_t {
 	#define CLI_STI_OPTION_CASE
 	#define CLI_STI_OPTION_HELP
 #endif /* ENABLE_CLI_STI */
+
+
+/**
+ * Define the BUILD_OPTIONS string
+ */
+#ifdef WITH_LTTNG_UST
+	#define BUILD_OPTIONS_LTTNG_UST	" --with-lttng-ust"
+#else
+	#define BUILD_OPTIONS_LTTNG_UST
+#endif /* WITH_LTTNG_UST */
+#if defined(ENABLE_CLI_STI) || defined(ENABLE_VERBOSE) || defined(WITH_LTTNG_UST)
+	#define BUILD_OPTIONS "With" BUILD_OPTIONS_VERBOSE \
+		"" BUILD_OPTIONS_CLI_STI \
+		"" BUILD_OPTIONS_LTTNG_UST \
+		"\n"
+#else
+	#define BUILD_OPTIONS
+#endif
