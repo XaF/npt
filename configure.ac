@@ -63,16 +63,18 @@ AC_ARG_WITH([lttng-ust],
 	[],
 	[with_lttng_ust=auto]
 )
-PKG_CHECK_MODULES([LTTNG_UST], [lttng-ust],
-	[have_lttng_ust=yes],
+PKG_CHECK_MODULES([LTTNG_UST], [lttng-ust], [
+		have_lttng_ust=yes
+		AC_CHECK_LIB([lttng-ust], [lttng_probe_register])
+	],
 	[have_lttng_ust=no]
 )
-AM_CONDITIONAL([HAVE_LIBLTTNG_UST], [test "x$have_lttng_ust" = "xyes"])
 AS_IF([test \( "x${have_lttng_ust}" = "xyes" \) -a \( "x${with_lttng_ust}" = "xyes" -o "x${with_lttng_ust}" = "xauto" \)], [
+		AM_CONDITIONAL([USE_LTTNG_UST], true)
 		AC_CHECK_LIB([dl], [dlopen])
-		AC_CHECK_LIB([lttng-ust], [main])
 		AC_DEFINE([WITH_LTTNG_UST], [1], [Define whether or not we want the UST tracepoints enabled if LTTng-UST is installed])
 	], [
+		AM_CONDITIONAL([USE_LTTNG_UST], false)
 		AS_IF([test "x$with_lttng_ust" = "xyes"], [
 			AC_MSG_ERROR([--with-lttng-ust was given but the LTTng-UST library was not found])
 		], [
