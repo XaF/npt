@@ -115,7 +115,18 @@ int npt_getopt(int argc, char **argv) {
 		/* getopt_long stores the option index here. */
 		int option_index = 0;
 
-		char* shortopt = {"a:eh" CLI_STI_OPTION_SHORT "l:o:p:t:" VERBOSE_OPTION_SHORT "V" };
+		char* shortopt = {
+			"a:"
+			"e"
+			"h"
+			CLI_STI_OPTION_SHORT
+			"l:"
+			"o:"
+			"p:"
+			"t:"
+			VERBOSE_OPTION_SHORT
+			"V"
+		};
 
 		c = getopt_long(argc, argv, shortopt,
 				long_options, &option_index);
