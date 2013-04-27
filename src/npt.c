@@ -49,6 +49,9 @@ void initopt() {
 	globalArgs.output = NULL;
 	globalArgs.trace_ust = false;
 	globalArgs.trace_kernel = false;
+
+	TPMAXFREQ_OPTION_INIT
+
 	globalArgs.picoseconds = false;
 	globalArgs.nanoseconds = false;
 	globalArgs.priority = 99;
@@ -71,6 +74,7 @@ void npt_help() {
 		"	-a CPU		--affinity=CPU		pin the process to the processor CPU (default: %d)\n"
 		"	-e		--eval-cpu-speed	evaluate the CPU speed instead of reading it\n"
 		"						from /proc/cpuinfo\n"
+		TPMAXFREQ_OPTION_HELP
 		"	-h		--help			show this message\n"
 		CLI_STI_OPTION_HELP
 		"	-l LOOPS	--loops=LOOPS		define the number of loops to do (default: %" PRIu64 ")\n"
@@ -98,6 +102,7 @@ int npt_getopt(int argc, char **argv) {
 			// Regular options
 			{"affinity",		required_argument,	0,	'a'},
 			{"eval-cpu-speed",	no_argument,		0,	'e'},
+			TPMAXFREQ_OPTION_LONG
 			{"help",		no_argument,		0,	'h'},
 			CLI_STI_OPTION_LONG
 			{"loops",		required_argument,	0,	'l'},
@@ -118,6 +123,7 @@ int npt_getopt(int argc, char **argv) {
 		char* shortopt = {
 			"a:"
 			"e"
+			TPMAXFREQ_OPTION_SHORT
 			"h"
 			CLI_STI_OPTION_SHORT
 			"l:"
@@ -162,6 +168,9 @@ int npt_getopt(int argc, char **argv) {
 			case 'e':
 				globalArgs.evaluateSpeed = true;
 				break;
+
+			// Option --tp-max-freq (-f)
+			TPMAXFREQ_OPTION_CASE
 
 			// Option --help (-h)
 			case 'h':
@@ -345,6 +354,8 @@ int cycle() {
 	counter = 0;
 	uint64_t t0, t1;
 
+	TPMAXFREQ_WORK_INIT
+
 	// General statistics
 	minDuration = 99999.0;
 	maxDuration = 0.0;
@@ -369,7 +380,7 @@ int cycle() {
 		// Calculate diff between t0 and t1
 		duration = diff(t1, t0);
 
-		UST_TRACE_LOOP
+		NPT_TRACE_LOOP
 
 		// Increment counter as we have done one more loop
 		counter++;
@@ -424,6 +435,7 @@ int print_results() {
 	printf("	sum:		%.6f %s\n", sumDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	printf("	variance:	%g %s\n", variance_n, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	printf("	std dev:	%.6f %s\n", stdDeviation, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
+	TPMAXFREQ_STATS_PRINT
 
 	// If we want to save the histogram in a file
 	if (globalArgs.output != NULL) {
@@ -442,6 +454,7 @@ int print_results() {
 			fprintf(hfd, "#	sum:		%.6f\n", sumDuration);
 			fprintf(hfd, "#	variance:	%g\n", variance_n);
 			fprintf(hfd, "#	std dev:	%.6f\n", stdDeviation);
+			TPMAXFREQ_STATS_FILE
 			fprintf(hfd, "#\n");
 			fprintf(hfd, "#	time	nb. loops\n");
 			fprintf(hfd, "#	------------------\n");

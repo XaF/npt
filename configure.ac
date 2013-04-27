@@ -48,6 +48,22 @@ if test x$enableverbose = xtrue ; then
 	AC_DEFINE([ENABLE_VERBOSE], [1], [Define whether or not we want to allow verbose mode])
 fi
 
+###
+# Tracepoint Frequency
+#
+AC_ARG_ENABLE([tracepoint-frequency],
+	AS_HELP_STRING([--disable-tracepoint-frequency], [disable the ability to set a maximum tracepoint frequency]),
+	[case "${enableval}" in
+		yes) enabletpmaxfreq=true ;;
+		no)  enabletpmaxfreq=false ;;
+		*) AC_MSG_ERROR([bad value ${enableval} for --disable-tracepoint-frequency]) ;;
+	esac],[
+		enabletpmaxfreq=true
+])
+if test x$enabletpmaxfreq = xtrue ; then
+	AC_DEFINE([ENABLE_TRACEPOINT_FREQUENCY], [1], [Define whether or not we want to allow to set a maximum tracepoint frequency])
+fi
+
 ####
 ####
 # Checks for libraries.

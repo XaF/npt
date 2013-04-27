@@ -46,6 +46,9 @@
 volatile uint64_t counter;
 double minDuration, maxDuration, sumDuration, meanDuration;
 double variance_n, stdDeviation;
+#ifdef ENABLE_TRACEPOINT_FREQUENCY
+	uint64_t tpnb;
+#endif /* ENABLE_TRACEPOINT_FREQUENCY */
 
 /**
  * Create a structure to store the variables
@@ -65,6 +68,9 @@ struct globalArgs_t {
 	unsigned int priority;  /* -p option */
 	bool trace_ust;         /* -t option */
 	bool trace_kernel;      /* -t option */
+#ifdef ENABLE_TRACEPOINT_FREQUENCY
+	uint64_t tpmaxfreq;	/* -f option */
+#endif /* ENABLE_TRACEPOINT_FREQUENCY */
 	int picoseconds;        /* flag */
 	int nanoseconds;        /* flag */
 	int evaluateSpeed;      /* flag */
@@ -121,6 +127,71 @@ struct globalArgs_t {
 	#define UST_TRACE_STOP
 #endif
 
+/**
+ * Prepare the defines for the tracepoint maximum frequency
+ * parameter
+ */
+#if defined(WITH_LTTNG_UST) && defined(ENABLE_TRACEPOINT_FREQUENCY)
+	#define BUILD_OPTIONS_TPMAXFREQ	" --enable-tracepoint-frequency"
+	#define TPMAXFREQ_OPTION_INIT	globalArgs.tpmaxfreq = 0;
+	#define TPMAXFREQ_OPTION_LONG	{"tp-max-freq",		required_argument,	0,	'f'},
+	#define TPMAXFREQ_OPTION_SHORT	"f:"
+	#define TPMAXFREQ_OPTION_CASE	\
+		case 'f': \
+			if (sscanf(optarg, "%" PRIu64 "", &globalArgs.tpmaxfreq) == 0) { \
+				fprintf(stderr, "--tp-freq: argument must be a 64bits unsigned int\n"); \
+				return 1; \
+			} \
+			break;
+
+	#define TPMAXFREQ_OPTION_HELP	"	" \
+					"-f FREQ		" \
+					"--tp-max-freq=FREQ	" \
+					"define the maximum number of tracepoints to spawn \n" \
+					"						" \
+					"per second\n"
+	#define TPMAXFREQ_WORK_INIT	\
+		tpnb = 0; \
+		double timebetweentp; \
+		if (globalArgs.tpmaxfreq < globalArgs.loops && globalArgs.tpmaxfreq > 0) { \
+			double onesecond; \
+			if (globalArgs.picoseconds) onesecond = 1.0e12; \
+			else if (globalArgs.nanoseconds) onesecond = 1.0e9; \
+			else onesecond = 1.0e6; \
+			timebetweentp = (double)onesecond/(double)globalArgs.tpmaxfreq; \
+		} else { \
+			timebetweentp = 0; \
+		} \
+		double timespent = timebetweentp+1;
+	#define TPMAXFREQ_WORK_LOOP	\
+		timespent += duration; \
+		if (timespent > timebetweentp) { \
+			timespent = 0; \
+			tpnb++; \
+			UST_TRACE_LOOP \
+		}
+	#define TPMAXFREQ_STATS_PRINT	printf("Tracepoints generated:	%" PRIu64 "\n", tpnb);
+	#define TPMAXFREQ_STATS_FILE	fprintf(hfd, "#Tracepoints generated:	%" PRIu64 "\n", tpnb);
+#else
+	#define BUILD_OPTIONS_TPMAXFREQ
+	#define TPMAXFREQ_OPTION_INIT
+	#define TPMAXFREQ_OPTION_LONG
+	#define TPMAXFREQ_OPTION_SHORT
+	#define TPMAXFREQ_OPTION_CASE
+	#define TPMAXFREQ_OPTION_HELP
+	#define TPMAXFREQ_WORK_INIT
+	#define TPMAXFREQ_STATS_PRINT
+	#define TPMAXFREQ_STATS_FILE
+#endif
+
+/**
+ * Define what to put in the loop for the tracepoint
+ */
+#ifdef TPMAXFREQ_WORK_LOOP
+	#define NPT_TRACE_LOOP	TPMAXFREQ_WORK_LOOP
+#else
+	#define NPT_TRACE_LOOP	UST_TRACE_LOOP
+#endif
 
 /**
  * Function rdtsc (ReaD Time Stamp Counter) used to calculate the
@@ -214,6 +285,7 @@ struct globalArgs_t {
 	#define BUILD_OPTIONS "With" BUILD_OPTIONS_VERBOSE \
 		"" BUILD_OPTIONS_CLI_STI \
 		"" BUILD_OPTIONS_LTTNG_UST \
+		"" BUILD_OPTIONS_TPMAXFREQ \
 		"\n"
 #else
 	#define BUILD_OPTIONS
