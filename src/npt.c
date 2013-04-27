@@ -541,8 +541,8 @@ int main (int argc, char **argv) {
 
 	// Running as root ?
 	if (getuid() != 0) {
-			fprintf(stderr, "Root access is needed. -- Aborting!\n");
-			return EXIT_FAILURE;
+		fprintf(stderr, "Root access is needed. -- Aborting!\n");
+		return EXIT_FAILURE;
 	}
 
 	// Prepare histogram
