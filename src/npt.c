@@ -47,8 +47,6 @@ void initopt() {
 
 	globalArgs.loops = NPT_DEFAULT_LOOP_NUMBER;
 	globalArgs.output = NULL;
-	globalArgs.trace_ust = false;
-	globalArgs.trace_kernel = false;
 
 	TPMAXFREQ_OPTION_INIT
 
@@ -108,7 +106,6 @@ int npt_getopt(int argc, char **argv) {
 			{"loops",		required_argument,	0,	'l'},
 			{"output",		required_argument,	0,	'o'},
 			{"prio",		required_argument,	0,	'p'},
-			{"trace",		required_argument,	0,	't'},
 			VERBOSE_OPTION_LONG
 			{"version",		no_argument,		0,	'V'},
 
@@ -129,7 +126,6 @@ int npt_getopt(int argc, char **argv) {
 			"l:"
 			"o:"
 			"p:"
-			"t:"
 			VERBOSE_OPTION_SHORT
 			"V"
 		};
@@ -202,16 +198,6 @@ int npt_getopt(int argc, char **argv) {
 				if (sscanf(optarg, "%u", &globalArgs.priority) == 0
 					|| globalArgs.priority > 99) {
 					fprintf(stderr, "--prio: argument must be an unsigned int between 0 and 99\n");
-					return 1;
-				}
-				break;
-
-			// Option --trace (-t)
-			case 't':
-				if (strcmp(optarg, "ust") == 0) globalArgs.trace_ust = true;
-				else if (strcmp(optarg, "kernel") == 0) globalArgs.trace_kernel = true;
-				else {
-					fprintf(stderr, "--trace: argument must be one of 'ust' or 'kernel'\n");
 					return 1;
 				}
 				break;

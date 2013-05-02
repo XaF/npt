@@ -66,8 +66,6 @@ struct globalArgs_t {
 	uint64_t loops;         /* -l option */
 	char* output;           /* -o option */
 	unsigned int priority;  /* -p option */
-	bool trace_ust;         /* -t option */
-	bool trace_kernel;      /* -t option */
 #ifdef ENABLE_TRACEPOINT_FREQUENCY
 	uint64_t tpmaxfreq;	/* -f option */
 #endif /* ENABLE_TRACEPOINT_FREQUENCY */
