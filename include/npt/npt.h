@@ -261,6 +261,7 @@ struct globalArgs_t {
 			globalArgs.allow_interrupts = true; \
 			break;
 	#define CLI_STI_OPTION_HELP	"        -i              --allow-interrupts      do not disable interrupts\n"
+	#define CLI_STI_OPTION_COND	if (!globalArgs.allow_interrupts)
 #else /* ENABLE_CLI_STI */
 	#define BUILD_OPTIONS_CLI_STI
 	#define sti()
@@ -270,6 +271,7 @@ struct globalArgs_t {
 	#define CLI_STI_OPTION_SHORT
 	#define CLI_STI_OPTION_CASE
 	#define CLI_STI_OPTION_HELP
+	#define CLI_STI_OPTION_COND
 #endif /* ENABLE_CLI_STI */
 
 

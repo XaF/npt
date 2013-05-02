@@ -572,7 +572,7 @@ int setrtmode(bool rt) {
 		}
 
 		// Disable local IRQs
-		cli();
+		CLI_STI_OPTION_COND { cli(); }
 	} else {
 		VERBOSE(1, "Disable RT mode");
 
@@ -582,7 +582,7 @@ int setrtmode(bool rt) {
 			ret = EXIT_FAILURE;
 
 		// Enable local IRQs
-		sti();
+		CLI_STI_OPTION_COND { sti(); }
 	}
 
 	return ret;
