@@ -43,7 +43,8 @@
 /**
  * Statistics variables
  */
-volatile uint64_t counter;
+uint64_t counter;
+double multi;
 double minDuration, maxDuration, sumDuration, meanDuration;
 double variance_n, stdDeviation;
 #ifdef ENABLE_TRACEPOINT_FREQUENCY
@@ -63,6 +64,7 @@ struct globalArgs_t {
 #endif /* ENABLE_CLI_STI */
 
 	unsigned int affinity;  /* -a option */
+	uint64_t duration;	/* -d option */
 	uint64_t loops;         /* -l option */
 	char* output;           /* -o option */
 	unsigned int priority;  /* -p option */
