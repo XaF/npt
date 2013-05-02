@@ -167,9 +167,38 @@ int npt_getopt(int argc, char **argv) {
 
 			// Option --duration (-d)
 			case 'd':
-				if (sscanf(optarg, "%" PRIu64, &globalArgs.duration) == 0) {
-					fprintf(stderr, "--duration: argument must be an unsigned int\n");
-					return 1;
+				{
+					char suffix = 0;
+					char* checkstr = (char *)malloc(sizeof(optarg));
+					if (sscanf(optarg, "%" PRIu64 "%c", &globalArgs.duration, &suffix) < 1
+						|| sprintf(checkstr, "%" PRIu64 "%c", globalArgs.duration, suffix) < 1
+						|| strcmp(checkstr, optarg) != 0) {
+						fprintf(stderr, "--duration: argument must be an unsigned int,"
+								" followed or not by a suffix\n");
+						free(checkstr);
+						return 1;
+					}
+					switch (suffix) {
+						case 'd':
+							globalArgs.duration *= 86400;
+							break;
+						case 'h':
+							globalArgs.duration *= 3600;
+							break;
+						case 'm':
+							globalArgs.duration *= 60;
+							break;
+						case 's':
+						case 0:
+							break;
+						default:
+							fprintf(stderr, "--duration: suffix invalid, must be one of 'd' (day),"
+									" 'h' (hour), 'm' (minute) or 's' (second).\n");
+							free(checkstr);
+							return 1;
+							break;
+					}
+					free(checkstr);
 				}
 				break;
 
