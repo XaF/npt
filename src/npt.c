@@ -468,9 +468,7 @@ int print_results() {
 	FILE *hfd = NULL;
 
 	// Print the statistics
-	printf("%" PRIu64 " loops done", counter);
-	if (globalArgs.duration > 0) printf(" in %d seconds.\n", (int)(globalArgs.duration/multi));
-	else printf(" over %" PRIu64 ".\n", globalArgs.loops);
+	printf("%" PRIu64 " loops done.\n", counter);
 	printf("Loops duration:\n");
 	printf("	min:		%.6f %s\n", minDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
 	printf("	max:		%.6f %s\n", maxDuration, UNITE(globalArgs.picoseconds, globalArgs.nanoseconds));
@@ -624,6 +622,12 @@ int main (int argc, char **argv) {
 	printf("# CPU frequency (%s): %.02f MHz\n",
 		((globalArgs.evaluateSpeed)?"evaluation":"/proc/cpuinfo"),
 		globalArgs.cpuHz / 1e6);
+
+	if (globalArgs.duration > 0) {
+		printf("# Running for %d seconds.. Please wait.\n", (int)(globalArgs.duration/multi));
+	} else {
+		printf("# Running for %" PRIu64 " loops.. Please wait.\n", globalArgs.loops);
+	}
 
 	// Start cycling
 	cycle();
