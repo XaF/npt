@@ -103,12 +103,12 @@ AS_IF([test \( "x${have_lttng_ust}" = "xyes" \) -a \( "x${with_lttng_ust}" = "xy
 ###
 # Maths
 #
-AC_CHECK_LIB([m], [sqrt])
+AC_CHECK_LIB([m], [sqrt], [], AC_MSG_ERROR([Maths library (-lm) is missing but is needed]))
 
 ###
 # Realtime
 #
-AC_CHECK_LIB([rt], [clock_gettime])
+AC_CHECK_LIB([rt], [clock_gettime], [], AC_MSG_ERROR([Real-time library (-lrt) is missing but is needed]))
 
 ####
 ####
