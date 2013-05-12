@@ -400,7 +400,7 @@ int cycle() {
 	t0 = rdtsc();
 	t1 = t0;
 
-	uint64_t sum64;
+	uint64_t sum64 = 0;
 	uint64_t compareMax;
 	uint64_t* compareMin;
 	if (globalArgs.duration > 0) {
