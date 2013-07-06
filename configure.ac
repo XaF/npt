@@ -1,4 +1,4 @@
-AC_INIT([npt], [0.02], [raphael.beamonte@gmail.com])
+AC_INIT([npt], [1.00], [raphael.beamonte@gmail.com])
 AC_CONFIG_AUX_DIR([config])
 AC_CANONICAL_TARGET
 AC_CANONICAL_HOST
