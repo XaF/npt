@@ -35,3 +35,6 @@ src/npt
 
 # npt version file
 include/version.h
+
+# ChangeLog will be generated on make dist
+ChangeLog
