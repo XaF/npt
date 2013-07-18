@@ -8,7 +8,8 @@ version.h:
 	## We first create variables for the current git version and
 	## the locations of the version.h and version.h.tmpl files
 	##
-	(version_h_tmpl="$(top_builddir)/include/version.h.tmpl"; \
+	@echo -n "Generating version.h ... "
+	@(version_h_tmpl="$(top_builddir)/include/version.h.tmpl"; \
 	if [ -f "$${version_h_tmpl}" ]; then \
 		version_h="$(top_builddir)/include/version.h"; \
 		##
@@ -58,6 +59,7 @@ version.h:
 			fi; \
 		fi; \
 	fi)
+	@echo "ok"
 
 ##
 ## version.h is defined as a .PHONY file even if it's a real file as
