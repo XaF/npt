@@ -92,6 +92,38 @@ void npt_help() {
 }
 
 /**
+ * Check if a CPU is online at the moment
+ */
+int _is_cpu_online(int cpu) {
+	// CPU 0 is always online
+	if (cpu == 0)
+		return 1;
+	// If this isn't a valid CPU... it is not online
+	else if (cpu >= sysconf(_SC_NPROCESSORS_CONF))
+		return 0;
+	// If all configured CPUs are online... it must be valid
+	else if (sysconf(_SC_NPROCESSORS_ONLN) == sysconf(_SC_NPROCESSORS_CONF))
+		return 1;
+	// Else, we check the online file of the given CPU
+	else {
+		int status;
+		FILE *online;
+		char filename[38];
+		snprintf(filename, sizeof(char) * 38, "/sys/devices/system/cpu/cpu%d/online", cpu);
+		online = fopen(filename, "r");
+		if (online == NULL) {
+			fprintf(stderr, "Error: unable to read the status of cpu %d.\n", cpu);
+		} else {
+			status = fgetc(online);
+			fclose(online);
+			return ((status=='1')?1:0);
+		}
+	}
+	return 0;
+}
+
+
+/**
  * Treat line command options
  */
 int npt_getopt(int argc, char **argv) {
@@ -156,10 +188,13 @@ int npt_getopt(int argc, char **argv) {
 			// Option --affinity (-a)
 			case 'a':
 				if (sscanf(optarg, "%u", &globalArgs.affinity) == 0
-					|| globalArgs.affinity >= sysconf(_SC_NPROCESSORS_ONLN)) {
+					|| !_is_cpu_online(globalArgs.affinity)) {
+					char buf[10];
+					FILE *onlineCPUs = fopen("/sys/devices/system/cpu/online", "r");
+					fgets(buf, sizeof(buf), onlineCPUs);
 					fprintf(stderr,
-						"--affinity: argument must be an integer between 0 and %ld\n",
-						sysconf(_SC_NPROCESSORS_ONLN)-1
+						"--affinity: argument must be an integer in the range %s",
+						buf
 					       );
 					return 1;
 				}
