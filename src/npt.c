@@ -46,6 +46,7 @@ void initopt() {
 	CLI_STI_OPTION_INIT
 
 	globalArgs.loops = NPT_DEFAULT_LOOP_NUMBER;
+	globalArgs.nocountloop = NPT_NOCOUNTLOOP;
 	globalArgs.output = NULL;
 	globalArgs.duration = 0;
 
@@ -79,6 +80,8 @@ void npt_help() {
 		"	-h		--help			show this message\n"
 		CLI_STI_OPTION_HELP
 		"	-l LOOPS	--loops=LOOPS		define the number of loops to do (default: %" PRIu64 ")\n"
+		"	-n NOCOUNT	--nocountloop=NOCOUNT	define the number of loops to do before starting\n"
+		"						analysis (default: %d)\n"
 		"	-o OUTPUT	--output=OUTPUT		output file for storing the report and histogram\n"
 		"			--nanoseconds		do the report and the histogram in nanoseconds\n"
 		"			--picoseconds		do the report and the histogram in picoseconds\n"
@@ -87,6 +90,7 @@ void npt_help() {
 		"	-V		--version		show the tool version\n",
 		globalArgs.affinity,
 		globalArgs.loops,
+		globalArgs.nocountloop,
 		globalArgs.priority
 	      );
 }
@@ -140,6 +144,7 @@ int npt_getopt(int argc, char **argv) {
 			{"help",		no_argument,		0,	'h'},
 			CLI_STI_OPTION_LONG
 			{"loops",		required_argument,	0,	'l'},
+			{"nocountloop",		required_argument,	0,	'n'},
 			{"output",		required_argument,	0,	'o'},
 			{"prio",		required_argument,	0,	'p'},
 			VERBOSE_OPTION_LONG
@@ -161,6 +166,7 @@ int npt_getopt(int argc, char **argv) {
 			"h"
 			CLI_STI_OPTION_SHORT
 			"l:"
+			"n:"
 			"o:"
 			"p:"
 			VERBOSE_OPTION_SHORT
@@ -258,6 +264,14 @@ int npt_getopt(int argc, char **argv) {
 			case 'l':
 				if (sscanf(optarg, "%" PRIu64 "", &globalArgs.loops) == 0) {
 					fprintf(stderr, "--loops: argument must be a 64bits unsigned int\n");
+					return 1;
+				}
+				break;
+
+			// Option --nocountloop (-n)
+			case 'n':
+				if (sscanf(optarg, "%u", &globalArgs.nocountloop) == 0) {
+					fprintf(stderr, "--nocountloop: argument must be an unsigned int\n");
 					return 1;
 				}
 				break;

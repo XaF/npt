@@ -66,6 +66,7 @@ struct globalArgs_t {
 	unsigned int affinity;  /* -a option */
 	uint64_t duration;	/* -d option */
 	uint64_t loops;         /* -l option */
+	int nocountloop;	/* -n option */
 	char* output;           /* -o option */
 	unsigned int priority;  /* -p option */
 #ifdef ENABLE_TRACEPOINT_FREQUENCY
@@ -74,7 +75,6 @@ struct globalArgs_t {
 	int picoseconds;        /* flag */
 	int nanoseconds;        /* flag */
 	int evaluateSpeed;      /* flag */
-
 
 	unsigned long cpuHz;
 	double cpuPeriod;
