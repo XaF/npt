@@ -220,6 +220,7 @@ int npt_getopt(int argc, char **argv) {
 						free(checkstr);
 						return 1;
 					}
+					free(checkstr);
 					switch (suffix) {
 						case 'd':
 							globalArgs.duration *= 86400;
@@ -236,11 +237,9 @@ int npt_getopt(int argc, char **argv) {
 						default:
 							fprintf(stderr, "--duration: suffix invalid, must be one of 'd' (day),"
 									" 'h' (hour), 'm' (minute) or 's' (second).\n");
-							free(checkstr);
 							return 1;
 							break;
 					}
-					free(checkstr);
 				}
 				break;
 
