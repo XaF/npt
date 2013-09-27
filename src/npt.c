@@ -42,20 +42,21 @@
  * Initialize options
  */
 void initopt() {
-	VERBOSE_OPTION_INIT
+	globalArgs.affinity = 1;
+	globalArgs.duration = 0;
+
+	TPMAXFREQ_OPTION_INIT
 	CLI_STI_OPTION_INIT
 
 	globalArgs.loops = NPT_DEFAULT_LOOP_NUMBER;
 	globalArgs.nocountloop = NPT_NOCOUNTLOOP;
 	globalArgs.output = NULL;
-	globalArgs.duration = 0;
+	globalArgs.priority = 99;
 
-	TPMAXFREQ_OPTION_INIT
+	VERBOSE_OPTION_INIT
 
 	globalArgs.picoseconds = false;
 	globalArgs.nanoseconds = false;
-	globalArgs.priority = 99;
-	globalArgs.affinity = 1;
 	globalArgs.evaluateSpeed = 0;
 }
 

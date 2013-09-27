@@ -55,23 +55,26 @@ double variance_n, stdDeviation;
  * Create a structure to store the variables
  */
 struct globalArgs_t {
-#ifdef ENABLE_VERBOSE
-	int verbosity;		/* -v option */
-#endif /* ENABLE_VERBOSE */
-
-#ifdef ENABLE_CLI_STI
-	bool allow_interrupts;        /* -i option */
-#endif /* ENABLE_CLI_STI */
-
 	unsigned int affinity;  /* -a option */
 	uint64_t duration;	/* -d option */
+
+#ifdef ENABLE_TRACEPOINT_FREQUENCY
+	uint64_t tpmaxfreq;	/* -f option */
+#endif /* ENABLE_TRACEPOINT_FREQUENCY */
+
+#ifdef ENABLE_CLI_STI
+	bool allow_interrupts;	/* -i option */
+#endif /* ENABLE_CLI_STI */
+
 	uint64_t loops;         /* -l option */
 	int nocountloop;	/* -n option */
 	char* output;           /* -o option */
 	unsigned int priority;  /* -p option */
-#ifdef ENABLE_TRACEPOINT_FREQUENCY
-	uint64_t tpmaxfreq;	/* -f option */
-#endif /* ENABLE_TRACEPOINT_FREQUENCY */
+
+#ifdef ENABLE_VERBOSE
+	int verbosity;		/* -v option */
+#endif /* ENABLE_VERBOSE */
+
 	int picoseconds;        /* flag */
 	int nanoseconds;        /* flag */
 	int evaluateSpeed;      /* flag */
