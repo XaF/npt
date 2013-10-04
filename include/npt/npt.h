@@ -75,6 +75,8 @@ struct globalArgs_t {
 	int verbosity;		/* -v option */
 #endif /* ENABLE_VERBOSE */
 
+	uint64_t window_trace;	/* long option */
+	uint64_t window_wait;	/* long option */
 	int picoseconds;        /* flag */
 	int nanoseconds;        /* flag */
 	int evaluateSpeed;      /* flag */

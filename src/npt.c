@@ -55,6 +55,9 @@ void initopt() {
 
 	VERBOSE_OPTION_INIT
 
+	globalArgs.window_trace = 0;
+	globalArgs.window_wait = 0;
+
 	globalArgs.picoseconds = false;
 	globalArgs.nanoseconds = false;
 	globalArgs.evaluateSpeed = 0;
@@ -87,6 +90,8 @@ void npt_help() {
 		"			--nanoseconds		do the report and the histogram in nanoseconds\n"
 		"			--picoseconds		do the report and the histogram in picoseconds\n"
 		"	-p PRIO		--prio=PRIO		priority to use as high prio process (default: %d)\n"
+		"			--trace-window=TIME	duration of the trace window when using windows mode\n"
+		"			--wait-window=TIME	duration of the wait window when using windows mode\n"
 		VERBOSE_OPTION_HELP
 		"	-V		--version		show the tool version\n",
 		globalArgs.affinity,
@@ -211,6 +216,8 @@ int npt_getopt(int argc, char **argv) {
 			{"prio",		required_argument,	0,	'p'},
 			VERBOSE_OPTION_LONG
 			{"version",		no_argument,		0,	'V'},
+			{"trace-window",	required_argument,	0,	2},
+			{"wait-window",		required_argument,	0,	3},
 
 			// Flags options
 			{"nanoseconds",		no_argument, &globalArgs.nanoseconds, true},
@@ -365,6 +372,22 @@ int npt_getopt(int argc, char **argv) {
 				exit(0);
 				break;
 
+			case 2:
+				if (_human_readable_microsecond(optarg, &globalArgs.window_trace, "--trace-window") != 0) {
+					return 1;
+				} else if (!globalArgs.window_wait) {
+					globalArgs.window_wait = globalArgs.window_trace;
+				}
+				break;
+
+			case 3:
+				if (_human_readable_microsecond(optarg, &globalArgs.window_wait, "--wait-window") != 0) {
+					return 1;
+				} else if (!globalArgs.window_trace) {
+					globalArgs.window_trace = globalArgs.window_wait;
+				}
+				break;
+
 			case '?':
 				/* getopt_long already printed an error message. */
 				return 1;
@@ -506,6 +529,14 @@ int cycle() {
 	variance_n = 0.0;
 	stdDeviation = 0.0;
 
+	// Windows mode
+	bool use_windows = (globalArgs.window_trace > 0);
+	int window = 0; // Starting window (0: wait; 1: trace)
+	double windows_duration[2];
+	windows_duration[0] = (double)globalArgs.window_wait;
+	windows_duration[1] = (double)globalArgs.window_trace;
+	double window_duration = 0;
+
 	// Time declaration for the first loop
 	t0 = rdtsc();
 	t1 = t0;
@@ -527,7 +558,9 @@ int cycle() {
 	// enters in the loop period we want to analyze
 	duration = 0;
 	while (*compareMin < compareMax) {
-		NPT_TRACE_LOOP
+		if (!use_windows || window) {
+			NPT_TRACE_LOOP
+		}
 
 		// Increment counter as we have done one more loop
 		counter++;
@@ -539,6 +572,14 @@ int cycle() {
 			if (duration > maxDuration) maxDuration = duration;
 			sumDuration += duration;
 			sum64 = (uint64_t)sumDuration;
+
+			if (use_windows) {
+				window_duration += duration;
+				if (window_duration > windows_duration[window]) {
+					window = (window+1)%2;
+					window_duration = 0;
+				}
+			}
 
 			// For variance and standard deviation
 			deltaDuration = duration - meanDuration;
@@ -727,7 +768,11 @@ int main (int argc, char **argv) {
 	else if (globalArgs.nanoseconds) multi = 1.0e9;
 	else multi = 1.0e6;
 	globalArgs.cpuPeriod = multi / (double)globalArgs.cpuHz;
+
+	// Scale duration values with the right multiplier
 	globalArgs.duration *= multi;
+	globalArgs.window_trace *= multi;
+	globalArgs.window_wait *= multi;
 
 	printf("# CPU frequency (%s): %.02f MHz\n",
 		((globalArgs.evaluateSpeed)?"evaluation":"/proc/cpuinfo"),
