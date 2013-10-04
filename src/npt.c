@@ -127,6 +127,67 @@ int _is_cpu_online(int cpu) {
 	return 0;
 }
 
+/**
+ * Accept human-readable time format up to microsecond
+ */
+int _human_readable_microsecond(char *optarg, uint64_t *arg, char *argname) {
+	char suffix[] = {0, 0};
+	char suffixEval = 0;
+	char* checkstr = (char *)malloc(sizeof(optarg));
+	if (sscanf(optarg, "%" PRIu64 "%c%c", arg, &suffix[0], &suffix[1]) < 1
+		|| sprintf(checkstr, "%" PRIu64 "%c%c", *arg, suffix[0], suffix[1]) < 1
+		|| strcmp(checkstr, optarg) != 0) {
+		fprintf(stderr, "%s: argument must be an unsigned int,"
+				" followed or not by a suffix\n", argname);
+		free(checkstr);
+		return 1;
+	}
+	free(checkstr);
+	switch (suffix[1]) {
+		case 0:
+			suffixEval = suffix[0];
+			break;
+		case 's':
+			if (suffix[0] == 'm')
+				suffixEval = 2;
+			else if (suffix[0] == 'u')
+				suffixEval = 3;
+			else
+				suffixEval = 1;
+			break;
+		default:
+			suffixEval = 1;
+			break;
+	}
+	switch (suffixEval) {
+		case 'd':
+			(*arg) *= 86400 * 1e6;
+			break;
+		case 'h':
+			(*arg) *= 3600 * 1e6;
+			break;
+		case 'm':
+			(*arg) *= 60 * 1e6;
+			break;
+		case 's':
+		case 0:
+			(*arg) = 1e6;
+			break;
+		case 2: // ms
+			(*arg) *= 1e3;
+			break;
+		case 3: // us
+			break;
+		default:
+			fprintf(stderr, "%s: suffix invalid, must be one of 'd' (day),"
+					" 'h' (hour), 'm' (minute), 's' (second), 'ms' (millisecond)"
+					" or 'us' (microsecond).\n", argname);
+			return 1;
+			break;
+	}
+	return 0;
+}
+
 
 /**
  * Treat line command options
