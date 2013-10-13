@@ -65,9 +65,9 @@ uint64_t counter;
 double multi;
 double minDuration, maxDuration, sumDuration, meanDuration;
 double variance_n, stdDeviation;
-#ifdef ENABLE_TRACEPOINT_FREQUENCY
+#if defined(WITH_LTTNG_UST) && defined(ENABLE_TRACEPOINT_FREQUENCY)
 	uint64_t tpnb;
-#endif /* ENABLE_TRACEPOINT_FREQUENCY */
+#endif /* WITH_LTTNG_UST && ENABLE_TRACEPOINT_FREQUENCY */
 
 /**
  * Create a structure to store the variables
@@ -76,9 +76,9 @@ struct globalArgs_t {
 	unsigned int affinity;  /* -a option */
 	uint64_t duration;	/* -d option */
 
-#ifdef ENABLE_TRACEPOINT_FREQUENCY
+#if defined(WITH_LTTNG_UST) && defined(ENABLE_TRACEPOINT_FREQUENCY)
 	uint64_t tpmaxfreq;	/* -f option */
-#endif /* ENABLE_TRACEPOINT_FREQUENCY */
+#endif /* WITH_LTTNG_UST && ENABLE_TRACEPOINT_FREQUENCY */
 
 #ifdef ENABLE_CLI_STI
 	bool allow_interrupts;	/* -i option */
