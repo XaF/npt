@@ -133,6 +133,16 @@ int _is_cpu_online(int cpu) {
 }
 
 /**
+ * Accept human-readable time format up to second
+ */
+int _human_readable_second(char *optarg, uint64_t *arg, char *argname) {
+	uint64_t tmp = 0;
+	int ret = _human_readable_microsecond(optarg, &tmp, argname);
+	if (!ret) (*arg) = tmp * 1e-6;
+	return ret;
+}
+
+/**
  * Accept human-readable time format up to microsecond
  */
 int _human_readable_microsecond(char *optarg, uint64_t *arg, char *argname) {
@@ -277,37 +287,8 @@ int npt_getopt(int argc, char **argv) {
 
 			// Option --duration (-d)
 			case 'd':
-				{
-					char suffix = 0;
-					char* checkstr = (char *)malloc(sizeof(optarg));
-					if (sscanf(optarg, "%" PRIu64 "%c", &globalArgs.duration, &suffix) < 1
-						|| sprintf(checkstr, "%" PRIu64 "%c", globalArgs.duration, suffix) < 1
-						|| strcmp(checkstr, optarg) != 0) {
-						fprintf(stderr, "--duration: argument must be an unsigned int,"
-								" followed or not by a suffix\n");
-						free(checkstr);
-						return 1;
-					}
-					free(checkstr);
-					switch (suffix) {
-						case 'd':
-							globalArgs.duration *= 86400;
-							break;
-						case 'h':
-							globalArgs.duration *= 3600;
-							break;
-						case 'm':
-							globalArgs.duration *= 60;
-							break;
-						case 's':
-						case 0:
-							break;
-						default:
-							fprintf(stderr, "--duration: suffix invalid, must be one of 'd' (day),"
-									" 'h' (hour), 'm' (minute) or 's' (second).\n");
-							return 1;
-							break;
-					}
+				if (_human_readable_second(optarg, &globalArgs.duration, "--duration") != 0) {
+					return 1;
 				}
 				break;
 
