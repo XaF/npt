@@ -93,8 +93,11 @@ struct globalArgs_t {
 	int verbosity;		/* -v option */
 #endif /* ENABLE_VERBOSE */
 
+#ifdef WITH_LTTNG_UST
 	uint64_t window_trace;	/* long option */
 	uint64_t window_wait;	/* long option */
+#endif /* WITH_LTTNG_UST */
+
 	int picoseconds;        /* flag */
 	int nanoseconds;        /* flag */
 	int evaluateSpeed;      /* flag */
@@ -190,6 +193,76 @@ struct globalArgs_t {
 	#define TPMAXFREQ_STATS_PRINT
 	#define TPMAXFREQ_STATS_FILE
 #endif
+
+/**
+ * Prepare the defines for the trace and wait windows if necessary
+ */
+#ifdef WITH_LTTNG_UST
+	#define WINDOWTRACE_OPTION_INIT	globalArgs.window_trace = 0;
+	#define WINDOWTRACE_OPTION_LONG	{"trace-window",	required_argument,	0,	2},
+	#define WINDOWTRACE_OPTION_CASE	\
+		case 2: \
+			if (_human_readable_microsecond(optarg, &globalArgs.window_trace, "--trace-window") != 0) { \
+				return 1; \
+			} else if (!globalArgs.window_wait) { \
+				globalArgs.window_wait = globalArgs.window_trace; \
+			} \
+			break;
+	#define WINDOWTRACE_OPTION_HELP	"	" \
+					"		" \
+					"--trace-window=TIME	" \
+					"duration of the trace window when using windows mode\n"
+
+	#define WINDOWWAIT_OPTION_INIT	globalArgs.window_wait = 0;
+	#define WINDOWWAIT_OPTION_LONG	{"wait-window",		required_argument,	0,	3},
+	#define WINDOWWAIT_OPTION_CASE	\
+		case 3: \
+			if (_human_readable_microsecond(optarg, &globalArgs.window_wait, "--wait-window") != 0) { \
+				return 1; \
+			} else if (!globalArgs.window_trace) { \
+				globalArgs.window_trace = globalArgs.window_wait; \
+			} \
+			break;
+	#define WINDOWWAIT_OPTION_HELP	"	" \
+					"		" \
+					"--wait-window=TIME	" \
+					"duration of the wait window when using windows mode\n"
+
+	#define WINDOW_OPTION_SCALE	\
+		globalArgs.window_trace *= multi * 1.0e-6; \
+		globalArgs.window_wait *= multi * 1.0e-6;
+	#define WINDOW_WORK_INIT	\
+		bool use_windows = (globalArgs.window_trace > 0); \
+		int window = 0; \
+		double windows_duration[2]; \
+		windows_duration[0] = (double)globalArgs.window_wait; \
+		windows_duration[1] = (double)globalArgs.window_trace; \
+		double window_duration = 0;
+	#define WINDOW_WORK_COND	if (!use_windows || window)
+	#define WINDOW_WORK_LOOP	\
+		if (use_windows) { \
+				window_duration += duration; \
+				if (window_duration > windows_duration[window]) { \
+					window = (window+1)%2; \
+					window_duration = 0; \
+				} \
+			}
+#else /* WITH_LTTNG_UST */
+	#define WINDOWTRACE_OPTION_INIT
+	#define WINDOWTRACE_OPTION_LONG
+	#define WINDOWTRACE_OPTION_CASE
+	#define WINDOWTRACE_OPTION_HELP
+
+	#define WINDOWWAIT_OPTION_INIT
+	#define WINDOWWAIT_OPTION_LONG
+	#define WINDOWWAIT_OPTION_CASE
+	#define WINDOWWAIT_OPTION_HELP
+
+	#define WINDOW_OPTION_SCALE
+	#define WINDOW_WORK_INIT
+	#define WINDOW_WORK_COND
+	#define WINDOW_WORK_LOOP
+#endif /* WITH_LTTNG_UST */
 
 /**
  * Define what to put in the loop for the tracepoint

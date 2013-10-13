@@ -55,8 +55,8 @@ void initopt() {
 
 	VERBOSE_OPTION_INIT
 
-	globalArgs.window_trace = 0;
-	globalArgs.window_wait = 0;
+	WINDOWTRACE_OPTION_INIT
+	WINDOWWAIT_OPTION_INIT
 
 	globalArgs.picoseconds = false;
 	globalArgs.nanoseconds = false;
@@ -90,8 +90,8 @@ void npt_help() {
 		"			--nanoseconds		do the report and the histogram in nanoseconds\n"
 		"			--picoseconds		do the report and the histogram in picoseconds\n"
 		"	-p PRIO		--prio=PRIO		priority to use as high prio process (default: %d)\n"
-		"			--trace-window=TIME	duration of the trace window when using windows mode\n"
-		"			--wait-window=TIME	duration of the wait window when using windows mode\n"
+		WINDOWTRACE_OPTION_HELP
+		WINDOWWAIT_OPTION_HELP
 		VERBOSE_OPTION_HELP
 		"	-V		--version		show the tool version\n",
 		globalArgs.affinity,
@@ -226,8 +226,8 @@ int npt_getopt(int argc, char **argv) {
 			{"prio",		required_argument,	0,	'p'},
 			VERBOSE_OPTION_LONG
 			{"version",		no_argument,		0,	'V'},
-			{"trace-window",	required_argument,	0,	2},
-			{"wait-window",		required_argument,	0,	3},
+			WINDOWTRACE_OPTION_LONG
+			WINDOWWAIT_OPTION_LONG
 
 			// Flags options
 			{"nanoseconds",		no_argument, &globalArgs.nanoseconds, true},
@@ -353,21 +353,11 @@ int npt_getopt(int argc, char **argv) {
 				exit(0);
 				break;
 
-			case 2:
-				if (_human_readable_microsecond(optarg, &globalArgs.window_trace, "--trace-window") != 0) {
-					return 1;
-				} else if (!globalArgs.window_wait) {
-					globalArgs.window_wait = globalArgs.window_trace;
-				}
-				break;
+			// Option --trace-window
+			WINDOWTRACE_OPTION_CASE
 
-			case 3:
-				if (_human_readable_microsecond(optarg, &globalArgs.window_wait, "--wait-window") != 0) {
-					return 1;
-				} else if (!globalArgs.window_trace) {
-					globalArgs.window_trace = globalArgs.window_wait;
-				}
-				break;
+			// Option --wait-window
+			WINDOWWAIT_OPTION_CASE
 
 			case '?':
 				/* getopt_long already printed an error message. */
@@ -511,12 +501,7 @@ int cycle() {
 	stdDeviation = 0.0;
 
 	// Windows mode
-	bool use_windows = (globalArgs.window_trace > 0);
-	int window = 0; // Starting window (0: wait; 1: trace)
-	double windows_duration[2];
-	windows_duration[0] = (double)globalArgs.window_wait;
-	windows_duration[1] = (double)globalArgs.window_trace;
-	double window_duration = 0;
+	WINDOW_WORK_INIT
 
 	// Time declaration for the first loop
 	t0 = rdtsc();
@@ -539,7 +524,7 @@ int cycle() {
 	// enters in the loop period we want to analyze
 	duration = 0;
 	while (*compareMin < compareMax) {
-		if (!use_windows || window) {
+		WINDOW_WORK_COND {
 			NPT_TRACE_LOOP
 		}
 
@@ -554,13 +539,7 @@ int cycle() {
 			sumDuration += duration;
 			sum64 = (uint64_t)sumDuration;
 
-			if (use_windows) {
-				window_duration += duration;
-				if (window_duration > windows_duration[window]) {
-					window = (window+1)%2;
-					window_duration = 0;
-				}
-			}
+			WINDOW_WORK_LOOP
 
 			// For variance and standard deviation
 			deltaDuration = duration - meanDuration;
@@ -752,8 +731,7 @@ int main (int argc, char **argv) {
 
 	// Scale duration values with the right multiplier
 	globalArgs.duration *= multi;
-	globalArgs.window_trace *= multi;
-	globalArgs.window_wait *= multi;
+	WINDOW_OPTION_SCALE
 
 	printf("# CPU frequency (%s): %.02f MHz\n",
 		((globalArgs.evaluateSpeed)?"evaluation":"/proc/cpuinfo"),
