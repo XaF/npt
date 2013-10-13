@@ -40,6 +40,24 @@
  */
 #define NPT_NOCOUNTLOOP 5
 
+
+/**
+ * Prepare the defines for tracing if necessary
+ */
+#if defined(WITH_LTTNG_UST) && defined(HAVE_LIBLTTNG_UST)
+	#define TRACEPOINT_DEFINE
+	#include <npt/tracepoints.h>
+	#define UST_TRACE_START	tracepoint(npt, start);
+	#define UST_TRACE_LOOP	tracepoint(npt, loop, counter, t0-t1, duration);
+	#define UST_TRACE_STOP	tracepoint(npt, stop);
+#else /* WITH_LTTNG_UST && HAVE_LIBLTTNG_UST */
+	#undef WITH_UST_TRACE
+	#define UST_TRACE_START
+	#define UST_TRACE_LOOP
+	#define UST_TRACE_STOP
+#endif /* WITH_LTTNG_UST && HAVE_LIBLTTNG_UST */
+
+
 /**
  * Statistics variables
  */
@@ -115,22 +133,6 @@ struct globalArgs_t {
 	#define VERBOSE_OPTION_HELP
 #endif  /* ENABLE_VERBOSE */
 
-
-/**
- * Prepare the defines for tracing if necessary
- */
-#if defined(WITH_LTTNG_UST) && defined(HAVE_LIBLTTNG_UST)
-	#define TRACEPOINT_DEFINE
-	#include <npt/tracepoints.h>
-	#define UST_TRACE_START	tracepoint(npt, start);
-	#define UST_TRACE_LOOP	tracepoint(npt, loop, counter, t0-t1, duration);
-	#define UST_TRACE_STOP	tracepoint(npt, stop);
-#else
-	#undef WITH_UST_TRACE
-	#define UST_TRACE_START
-	#define UST_TRACE_LOOP
-	#define UST_TRACE_STOP
-#endif
 
 /**
  * Prepare the defines for the tracepoint maximum frequency
