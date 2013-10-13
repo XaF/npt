@@ -176,7 +176,7 @@ int _human_readable_microsecond(char *optarg, uint64_t *arg, char *argname) {
 			break;
 		case 's':
 		case 0:
-			(*arg) = 1e6;
+			(*arg) *= 1e6;
 			break;
 		case 2: // ms
 			(*arg) *= 1e3;
