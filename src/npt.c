@@ -524,9 +524,7 @@ int cycle() {
 	// enters in the loop period we want to analyze
 	duration = 0;
 	while (*compareMin < compareMax) {
-		WINDOW_WORK_COND {
-			NPT_TRACE_LOOP
-		}
+		NPT_TRACE_LOOP
 
 		// Increment counter as we have done one more loop
 		counter++;
