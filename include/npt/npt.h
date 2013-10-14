@@ -257,7 +257,7 @@ struct globalArgs_t {
 		}
 	#define TPMAXFREQ_STATS_PRINT	printf("Tracepoints generated:	%" PRIu64 "\n", tpnb);
 	#define TPMAXFREQ_STATS_FILE	fprintf(hfd, "#Tracepoints generated:	%" PRIu64 "\n", tpnb);
-#else
+#else /* WITH_LTTNG_UST && ENABLE_TRACEPOINT_FREQUENCY */
 	#define BUILD_OPTIONS_TPMAXFREQ
 	#define TPMAXFREQ_OPTION_INIT
 	#define TPMAXFREQ_OPTION_LONG
@@ -267,7 +267,7 @@ struct globalArgs_t {
 	#define TPMAXFREQ_WORK_INIT
 	#define TPMAXFREQ_STATS_PRINT
 	#define TPMAXFREQ_STATS_FILE
-#endif
+#endif /* WITH_LTTNG_UST && ENABLE_TRACEPOINT_FREQUENCY */
 
 /**
  * Define what to put in the loop for the tracepoint
@@ -303,10 +303,10 @@ struct globalArgs_t {
  */
 #ifdef CLOCK_MONOTONIC_RAW
 	#define NPT_CLOCK_MONOTONIC CLOCK_MONOTONIC_RAW
-#else
+#else /* CLOCK_MONOTONIC_RAW */
 	#define NPT_CLOCK_MONOTONIC CLOCK_MONOTONIC
 	#warning Using CLOCK_MONOTONIC as CLOCK_MONOTONIC_RAW is not available
-#endif
+#endif /* CLOCK_MONOTONIC_RAW */
 
 
 /**
@@ -365,7 +365,7 @@ struct globalArgs_t {
  */
 #ifdef WITH_LTTNG_UST
 	#define BUILD_OPTIONS_LTTNG_UST	" --with-lttng-ust"
-#else
+#else /* WITH_LTTNG_UST */
 	#define BUILD_OPTIONS_LTTNG_UST
 #endif /* WITH_LTTNG_UST */
 #if defined(ENABLE_CLI_STI) || defined(ENABLE_VERBOSE) || defined(WITH_LTTNG_UST)
@@ -375,6 +375,6 @@ struct globalArgs_t {
 		"" BUILD_OPTIONS_TPMAXFREQ \
 		"" BUILD_OPTIONS_WINDOWSMODE \
 		"\n"
-#else
+#else /* ENABLE_CLI_STI || ENABLE_VERBOSE || WITH_LTTNG_UST */
 	#define BUILD_OPTIONS
-#endif
+#endif /* ENABLE_CLI_STI || ENABLE_VERBOSE || WITH_LTTNG_UST */
