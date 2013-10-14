@@ -64,6 +64,22 @@ if test x$enabletpmaxfreq = xtrue ; then
 	AC_DEFINE([ENABLE_TRACEPOINT_FREQUENCY], [1], [Define whether or not we want to allow to set a maximum tracepoint frequency])
 fi
 
+###
+# Windows mode
+#
+AC_ARG_ENABLE([windows-mode],
+	AS_HELP_STRING([--disable-windows-mode], [disable the ability to use the windows mode for tracing]),
+	[case "${enableval}" in
+		yes) enablewindowsmode=true ;;
+		no)  enablewindowsmode=false ;;
+		*) AC_MSG_ERROR([bad value ${enableval} for --disable-windows-mode]) ;;
+	esac],[
+		enablewindowsmode=true
+])
+if test x$enablewindowsmode = xtrue ; then
+	AC_DEFINE([ENABLE_WINDOWS_MODE], [1], [Define whether or not we want to allow to use the windows mode for tracing])
+fi
+
 ####
 ####
 # Checks for libraries.

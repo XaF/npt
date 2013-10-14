@@ -93,10 +93,10 @@ struct globalArgs_t {
 	int verbosity;		/* -v option */
 #endif /* ENABLE_VERBOSE */
 
-#ifdef WITH_LTTNG_UST
+#if defined(WITH_LTTNG_UST) && defined(ENABLE_WINDOWS_MODE)
 	uint64_t window_trace;	/* long option */
 	uint64_t window_wait;	/* long option */
-#endif /* WITH_LTTNG_UST */
+#endif /* WITH_LTTNG_UST && ENABLE_WINDOWS_MODE */
 
 	int picoseconds;        /* flag */
 	int nanoseconds;        /* flag */
@@ -197,7 +197,8 @@ struct globalArgs_t {
 /**
  * Prepare the defines for the trace and wait windows if necessary
  */
-#ifdef WITH_LTTNG_UST
+#if defined(WITH_LTTNG_UST) && defined(ENABLE_WINDOWS_MODE)
+	#define BUILD_OPTIONS_WINDOWSMODE	" --enable-windows-mode"
 	#define WINDOWTRACE_OPTION_INIT	globalArgs.window_trace = 0;
 	#define WINDOWTRACE_OPTION_LONG	{"trace-window",	required_argument,	0,	2},
 	#define WINDOWTRACE_OPTION_CASE	\
@@ -247,7 +248,8 @@ struct globalArgs_t {
 					window_duration = 0; \
 				} \
 			}
-#else /* WITH_LTTNG_UST */
+#else /* WITH_LTTNG_UST && ENABLE_WINDOwS_MODE */
+	#define BUILD_OPTIONS_WINDOWSMODE
 	#define WINDOWTRACE_OPTION_INIT
 	#define WINDOWTRACE_OPTION_LONG
 	#define WINDOWTRACE_OPTION_CASE
@@ -262,7 +264,7 @@ struct globalArgs_t {
 	#define WINDOW_WORK_INIT
 	#define WINDOW_WORK_COND
 	#define WINDOW_WORK_LOOP
-#endif /* WITH_LTTNG_UST */
+#endif /* WITH_LTTNG_UST && ENABLE_WINDOWS_MODE */
 
 /**
  * Define what to put in the loop for the tracepoint
@@ -368,6 +370,7 @@ struct globalArgs_t {
 		"" BUILD_OPTIONS_CLI_STI \
 		"" BUILD_OPTIONS_LTTNG_UST \
 		"" BUILD_OPTIONS_TPMAXFREQ \
+		"" BUILD_OPTIONS_WINDOWSMODE \
 		"\n"
 #else
 	#define BUILD_OPTIONS
